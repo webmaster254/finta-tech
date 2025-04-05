@@ -1,0 +1,12 @@
+445624,4456240011,115500.00,KES,09082024
+10000.00,A,Gabriel Muhoti Wairegi,254720338820,MMTS,99002,fanikishamicrofinancebank@gmail.com,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement
+5000.00,A,Jane Mwihaki Wamiti,254716382368,MMTS,99002,fanikishamicrofinancebank@gmail.com,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement
+17000.00,A,Virginia Njeri Ndirangu,254720901399,MMTS,99002,fanikishamicrofinancebank@gmail.com,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement
+14000.00,A,Duncan Kimani Waweru,254724592121,MMTS,99002,fanikishamicrofinancebank@gmail.com,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement
+17000.00,A,Elizabeth Kamene Kyalya,254790131358,MMTS,99002,fanikishamicrofinancebank@gmail.com,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement
+7500.00,A,Christine Cherotich Aiyabei,254714984745,MMTS,99002,fanikishamicrofinancebank@gmail.com,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement
+5000.00,A,Loice Wanjiru Gachoka,254758836638,MMTS,99002,fanikishamicrofinancebank@gmail.com,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement
+10000.00,A,Gilbert Maranga Kengere,254745163911,MMTS,99002,fanikishamicrofinancebank@gmail.com,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement
+10000.00,A,Gladys Waithera Kamau,254727202893,MMTS,99002,fanikishamicrofinancebank@gmail.com,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement
+10000.00,A,Jerald Mwangi Kimari,254741076915,MMTS,99002,fanikishamicrofinancebank@gmail.com,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement
+10000.00,A,Otini Kubarih Ogiso,254715674142,MMTS,99002,fanikishamicrofinancebank@gmail.com,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement,Loan Disbursement

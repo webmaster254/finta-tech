@@ -1,0 +1,138 @@
+{
+    "name": "laravel/laravel",
+    "type": "project",
+    "description": "The skeleton application for the Laravel framework.",
+    "keywords": [
+        "laravel",
+        "framework"
+    ],
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "abanoubnassem/filament-phone-field": "^0.0.7",
+        "akaunting/laravel-money": "^5.2",
+        "andrewdwallo/transmatic": "^1.1",
+        "awcodes/filament-curator": "^3.5",
+        "awcodes/filament-sticky-header": "^2.0",
+        "awcodes/filament-table-repeater": "^3.0",
+        "barryvdh/laravel-dompdf": "^2.2",
+        "barryvdh/laravel-snappy": "^1.0",
+        "bezhansalleh/filament-exceptions": "^2.1",
+        "bezhansalleh/filament-shield": "^3.2",
+        "bytexr/filament-queueable-bulk-actions": "^0.2.3",
+        "cheesegrits/filament-phone-numbers": "^1.0",
+        "croustibat/filament-jobs-monitor": "^2.4",
+        "diogogpinto/filament-auth-ui-enhancer": "^1.0",
+        "dotswan/filament-map-picker": "^1.6",
+        "eightynine/filament-approvals": "^3.0",
+        "eightynine/filament-excel-import": "^3.0",
+        "eightynine/filament-reports": "^3.0",
+        "filament/filament": "^3.2",
+        "flowframe/laravel-trend": "^0.1.5",
+        "geo-sot/filament-env-editor": "^0.0.2",
+        "guava/filament-clusters": "^1.4",
+        "guava/filament-drafts": "*",
+        "guzzlehttp/guzzle": "^7.2",
+        "hugomyb/filament-error-mailer": "^3.1",
+        "icetalker/filament-table-repeater": "^1.4",
+        "jeffgreco13/filament-breezy": "^2.3",
+        "joaopaulolndev/filament-pdf-viewer": "^1.0",
+        "joshembling/image-optimizer": "*",
+        "kdbz/kenya-county": "^1.0",
+        "kenepa/multi-widget": "^2.0",
+        "laravel/framework": "^10.10",
+        "laravel/sanctum": "^3.3",
+        "laravel/tinker": "^2.8",
+        "league/flysystem-ftp": "^3.28",
+        "league/flysystem-sftp-v3": "^3.0",
+        "leandrocfe/filament-apex-charts": "^3.1",
+        "livewire/livewire": "^3.0",
+        "malzariey/filament-daterangepicker-filter": "^2.5",
+        "njxqlus/filament-progressbar": "^1.0",
+        "outerweb/filament-settings": "^1.1",
+        "outerweb/settings": "^1.0",
+        "parfaitementweb/filament-country-field": "^2.4",
+        "phpseclib/phpseclib": "~3.0",
+        "rappasoft/laravel-authentication-log": "^3.0",
+        "rupadana/filament-api-service": "^3.2",
+        "saade/filament-autograph": "^3.2",
+        "sentry/sentry-laravel": "^4.5",
+        "shuvroroy/filament-spatie-laravel-backup": "^2.1",
+        "shuvroroy/filament-spatie-laravel-health": "^2.0",
+        "spatie/cpu-load-health-check": "^1.0",
+        "spatie/laravel-backup": "^8.6",
+        "spatie/laravel-health": "^1.27",
+        "spatie/laravel-permission": "^6.2",
+        "stechstudio/filament-impersonate": "^3.8",
+        "tapp/filament-authentication-log": "^3.0",
+        "thiktak/filament-simple-list-entry": "^1.0",
+        "tomatophp/filament-alerts": "^2.2",
+        "tomatophp/filament-notes": "^1.0",
+        "tomatophp/filament-types": "^1.0",
+        "torann/geoip": "^3.0",
+        "ysfkaya/filament-phone-input": "^3.1",
+        "z3d0x/filament-logger": "^0.7.1"
+    },
+    "require-dev": {
+        "barryvdh/laravel-debugbar": "^3.15",
+        "doctrine/dbal": "^3.8",
+        "fakerphp/faker": "^1.9.1",
+        "filament/upgrade": "^3.2",
+        "laravel/pint": "^1.0",
+        "laravel/sail": "^1.18",
+        "laravel/telescope": "^5.0",
+        "mockery/mockery": "^1.4.4",
+        "nunomaduro/collision": "^7.0",
+        "phpunit/phpunit": "^10.1",
+        "spatie/laravel-ignition": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi",
+            "@php artisan filament:upgrade"
+
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+        ],
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-create-project-cmd": [
+            "@php artisan key:generate --ansi"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": [
+                "laravel/telescope"
+            ]
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+
+
+}

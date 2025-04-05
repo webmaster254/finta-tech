@@ -1,0 +1,45 @@
+<?php
+
+namespace App\Filament\Resources\LoanResource\Pages;
+
+use Filament\Actions;
+use App\Models\Loan\LoanCharge;
+use App\Models\Loan\LoanProduct;
+use App\Models\Loan\LoanLinkedCharge;
+use App\Filament\Resources\LoanResource;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\CreateRecord;
+
+class CreateLoan extends CreateRecord
+{
+    protected static string $resource = LoanResource::class;
+    protected function getCreatedNotificationTitle(): ?string
+    {
+        return 'Loan Created successfully';
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+{
+    $loanProduct = LoanProduct::find($data['loan_product_id']);
+    if ($loanProduct->maximum_principal < $data['principal']) {
+        Notification::make()
+            ->warning()
+            ->title('The principal Amount cannot be greater than the maximum principal for this loan product')
+            ->body('Enter a value less than or equal to '.$loanProduct->maximum_principal)
+            ->persistent()
+
+            ->send();
+
+        $this->halt();
+    }
+
+    return $data;
+}
+
+
+}

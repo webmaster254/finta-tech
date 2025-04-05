@@ -1,0 +1,10 @@
+{
+    "Investment": "Investment",
+    "Credit": "Credit",
+    "Depository": "Depository",
+    "Loan": "Loan",
+    "Other": "Other",
+    "Currency": "Currency",
+    "Code": "Code",
+    "Name": "Name"
+}
