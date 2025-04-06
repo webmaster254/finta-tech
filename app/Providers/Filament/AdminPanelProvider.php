@@ -12,6 +12,7 @@ use App\Filament\Pages\Backups;
 use Filament\Navigation\MenuItem;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\MaxWidth;
+use App\Filament\Pages\ApproveClient;
 use Filament\widgets\UserMultiWidget;
 use Filament\Navigation\NavigationItem;
 use App\Filament\Pages\Settings\Settings;
@@ -40,6 +41,7 @@ use Njxqlus\FilamentProgressbar\FilamentProgressbarPlugin;
 use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Croustibat\FilamentJobsMonitor\FilamentJobsMonitorPlugin;
+use App\Filament\Resources\ClientResource\Pages\ClientApprove;
 use Tapp\FilamentAuthenticationLog\FilamentAuthenticationLogPlugin;
 use Outerweb\FilamentSettings\Filament\Plugins\FilamentSettingsPlugin;
 use ShuvroRoy\FilamentSpatieLaravelBackup\FilamentSpatieLaravelBackupPlugin;
@@ -113,6 +115,10 @@ class AdminPanelProvider extends PanelProvider
                     ->url(fn (): string => ClientResource::getUrl())
                     ->icon('heroicon-o-user-group')
                     ->sort(1),
+                NavigationItem::make('Approve Clients')
+                    ->url(fn (): string => ApproveClient::getUrl())
+                    ->group('Clients Management')
+                    ->sort(2),
                 // ...
             ])
             ->middleware([

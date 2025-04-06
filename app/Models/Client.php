@@ -136,7 +136,11 @@ public function sent_by(): BelongsTo
  {
      return $this->hasMany(Message::class);
  }
- 
+
+ public function business(): BelongsTo
+{
+    return $this->belongsTo(Business::class);
+}
 
  public function spouse()
  {

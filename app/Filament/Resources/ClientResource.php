@@ -17,9 +17,11 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Infolists;
 use Filament\Forms\Form;
+use Pages\ApproveClient;
 use App\Enums\LoanStatus;
 use App\Enums\TypeOfTech;
 use App\Models\SubCounty;
+use Pages\ApprovalClient;
 use App\Models\ClientType;
 use App\Models\Profession;
 use Filament\Tables\Table;
@@ -34,6 +36,7 @@ use Filament\Resources\Resource;
 use Awcodes\Curator\Models\Media;
 use Awcodes\TableRepeater\Header;
 use Dotswan\MapPicker\Fields\Map;
+use Filament\Resources\Pages\Page;
 use Illuminate\Support\Facades\DB;
 use Filament\Forms\Components\Card;
 use Illuminate\Support\Facades\URL;
@@ -59,6 +62,7 @@ use Filament\Notifications\Notification;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Forms\Components\DatePicker;
+use Filament\Pages\SubNavigationPosition;
 use Filament\Tables\Actions\ExportAction;
 use Filament\Tables\Actions\ImportAction;
 use Filament\Tables\Filters\SelectFilter;
@@ -71,11 +75,11 @@ use Filament\Tables\Actions\ExportBulkAction;
 use App\Filament\Resources\ClientResource\Pages;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 use Filament\Infolists\Components\Actions\Action;
+
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Tables\Actions\Action as TableAction;
 use Ysfkaya\FilamentPhoneInput\Tables\PhoneColumn;
 use Awcodes\Curator\Components\Forms\CuratorPicker;
-
 use Awcodes\TableRepeater\Components\TableRepeater;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Ysfkaya\FilamentPhoneInput\Infolists\PhoneEntry;
@@ -106,11 +110,12 @@ class ClientResource extends Resource implements HasShieldPermissions
 {
     protected static ?string $model = Client::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-user-group';
-    protected static ?string $navigationLabel = 'Clients';
+    //protected static ?string $navigationIcon = 'heroicon-o-user-group';
+    protected static ?string $navigationLabel = 'Maintenance';
     protected static ?string $navigationGroup = 'Clients Management';
     protected static ?int $navigationSort = 0;
     protected static ?string $recordTitleAttribute = 'fullname';
+    protected static SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Top;
 
 
     public static function getNavigationBadge(): ?string
@@ -453,9 +458,6 @@ public static function form(Form $form): Form
                         Infolists\Components\TextEntry::make('id_number')
                             ->color('info')
                             ->label('ID Number'),
-                        Infolists\Components\TextEntry::make('account_number')
-                            ->color('info')
-                            ->label('Account Number'),
                         Infolists\Components\TextEntry::make('loan_officer.fullname')
                             ->color('info')
                             ->label('Loan Officer'),
@@ -1169,6 +1171,15 @@ public static function form(Form $form): Form
             'view' => Pages\ViewClient::route('/{record}'),
         ];
     }
+
+
+    public static function getRecordSubNavigation(Page $page): array
+{
+    return $page->generateNavigationItems([
+        Pages\ViewClient::class,
+        Pages\EditClient::class,
+    ]);
+}
 
     public static function getGlobalSearchResultUrl(Model $record): string
     {
