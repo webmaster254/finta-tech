@@ -13,7 +13,7 @@ enum ChartAccountType: string implements HasLabel
     case CurrentLiability = 'current_liability';
     case NonCurrentLiability = 'non_current_liability';
     case ContraLiability = 'contra_liability';
-    case Equity = 'equity';
+    case Equity = 'equity'; 
     case ContraEquity = 'contra_equity';
     case OperatingRevenue = 'operating_revenue';
     case NonOperatingRevenue = 'non_operating_revenue';

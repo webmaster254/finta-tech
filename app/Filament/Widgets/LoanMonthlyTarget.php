@@ -5,14 +5,15 @@ namespace App\Filament\Widgets;
 use Carbon\Carbon;
 use App\Models\Loan\Loan;
 use Illuminate\View\View;
+use Filament\Facades\Filament;
 use Illuminate\Support\Number;
+use Illuminate\Support\Facades\DB;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Toggle;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Loan\LoanRepaymentSchedule;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 class LoanMonthlyTarget extends ApexChartWidget
 {
@@ -39,7 +40,8 @@ class LoanMonthlyTarget extends ApexChartWidget
     protected function getFooter(): string | View
     {
         $now = now();
-        $data = Cache::remember('loan_monthly_target_' . $now->format('Y-m'), 300, function () use ($now) {
+        $branchId = Filament::getTenant()->id;
+        $data = Cache::remember('loan_monthly_target_' . $now->format('Y-m') . '_' . $branchId, 300, function () use ($now, $branchId) {
             $result = DB::query()
                 ->select([
                     DB::raw('COALESCE(SUM(
@@ -58,6 +60,7 @@ class LoanMonthlyTarget extends ApexChartWidget
                 ->from('loan_repayment_schedules')
                 ->join('loans', 'loans.id', '=', 'loan_repayment_schedules.loan_id')
                 ->where('loans.status', 'active')
+                ->where('loans.branch_id', $branchId)
                 ->where(function ($query) use ($now) {
                     $query->whereBetween('loan_repayment_schedules.due_date', [
                         $now->startOfMonth()->format('Y-m-d'),
@@ -138,8 +141,9 @@ class LoanMonthlyTarget extends ApexChartWidget
         $filters = $this->filterFormData;
         $startOfYear = Carbon::now()->startOfYear();
         $endOfYear = Carbon::now()->endOfYear();
+        $branchId = Filament::getTenant()->id;
 
-        $data = Cache::remember('loan_monthly_target_chart_' . $startOfYear->year, 300, function () use ($startOfYear, $endOfYear) {
+        $data = Cache::remember('loan_monthly_target_chart_' . $startOfYear->year . '_' . $branchId, 300, function () use ($startOfYear, $endOfYear, $branchId) {
             return DB::query()
                 ->select([
                     DB::raw('DATE_FORMAT(loan_repayment_schedules.due_date, "%b-%Y") as month_year'),
@@ -159,6 +163,7 @@ class LoanMonthlyTarget extends ApexChartWidget
                 ->from('loan_repayment_schedules')
                 ->join('loans', 'loans.id', '=', 'loan_repayment_schedules.loan_id')
                 ->where('loans.status', 'active')
+                ->where('loans.branch_id', $branchId)
                 ->whereBetween('loan_repayment_schedules.due_date', [
                     $startOfYear->format('Y-m-d'),
                     $endOfYear->format('Y-m-d')

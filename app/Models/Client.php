@@ -12,6 +12,7 @@ use App\Models\Message;
 use App\Models\Loan\Loan;
 use App\Models\ClientFile;
 use App\Models\ClientType;
+use App\Models\EmploymentInfo;
 use Filament\Facades\Filament;
 use App\Models\ClientNextOfKins;
 use Laravel\Sanctum\HasApiTokens;
@@ -137,15 +138,20 @@ public function sent_by(): BelongsTo
      return $this->hasMany(Message::class);
  }
 
- public function business(): BelongsTo
+ public function business()
 {
-    return $this->belongsTo(Business::class);
+    return $this->hasOne(Business::class);
 }
 
- public function spouse()
- {
-     return $this->hasOne(Spouse::class);
- }
+public function employment()
+{
+    return $this->hasOne(EmploymentInfo::class);
+}
+
+public function spouse(): BelongsTo
+{
+    return $this->belongsTo(Spouse::class);
+}
 
  public function referees()
  {

@@ -23,19 +23,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(ClientRelationshipSeeder::class);
+        // $this->call(ClientRelationshipSeeder::class);
 
-        $this->call(RoleSeeder::class);
-        $this->call(UserSeeder::class);
-        $this->call(CurrencySeeder::class);
-        $this->call(ShieldSeeder::class);
-        $this->call(ClientTypeSeeder::class);
-        $this->call(ClientRelationshipSeeder::class);
-        $this->call(LoanProcessingStrategySeeder::class);
-        $this->call(TitleSeeder::class);
+        // $this->call(RoleSeeder::class);
+        // $this->call(UserSeeder::class);
+        // $this->call(CurrencySeeder::class);
+        // $this->call(ShieldSeeder::class);
+        // $this->call(ClientTypeSeeder::class);
+        // $this->call(ClientRelationshipSeeder::class);
+        // $this->call(LoanProcessingStrategySeeder::class);
+        // $this->call(TitleSeeder::class);
         $this->call(ChartOfAccountsSeeder::class);
-       $this->call(KenyaCountySeeder::class);
-       $this->call(ProfessionSeeder::class);
+    //    $this->call(KenyaCountySeeder::class);
+    //    $this->call(ProfessionSeeder::class);
         // \App\Models\User::factory(10)->create();
 
         // \App\Models\User::factory()->create([

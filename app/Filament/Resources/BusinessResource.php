@@ -12,14 +12,19 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Enums\BusinessType;
 use App\Enums\BusinessStatus;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\Split;
 use Filament\Forms\Components\DatePicker;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Infolists\Components\Fieldset;
+use Filament\Infolists\Components\TextEntry;
 use App\Filament\Resources\BusinessResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\BusinessResource\RelationManagers;
+use Joaopaulolndev\FilamentPdfViewer\Infolists\Components\PdfViewerEntry;
 use App\Filament\Resources\BusinessResource\RelationManagers\BusinessRelationManager;
 
 class BusinessResource extends Resource
@@ -34,6 +39,8 @@ class BusinessResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\Hidden::make('status')
+            ->default('pending'),
                 Forms\Components\Select::make('client_id')
                     ->options(Client::all()->pluck('full_name', 'id'))
                     ->label('Client')
@@ -132,18 +139,130 @@ class BusinessResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('sector')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('status'),
+                Tables\Columns\TextColumn::make('status')
+                    ->badge(),
             ])
             ->filters([
                 //
             ])
             ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->modalHeading('View Business')
+                    ->modalDescription('View business information')
+                    ->modalIcon('heroicon-o-building-office-2')
+                    ->modalIconColor('success'),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Split::make([
+                Fieldset::make('Business Information')
+                    ->schema([
+                        TextEntry::make('name')
+                    ->label('Business Name')
+                    ->color('info'),
+                TextEntry::make('business_type')
+                    ->label('Business Type')
+                    ->color('info'),
+                TextEntry::make('industry')
+                    ->label('Industry')
+                    ->color('info'),
+                TextEntry::make('location')
+                    ->label('Location')
+                    ->color('info'),
+                TextEntry::make('ownership')
+                    ->label('Ownership')
+                    ->color('info'),
+                TextEntry::make('premise_ownership')
+                    ->label('Premise Ownership')
+                    ->color('info'),
+                TextEntry::make('employees')
+                    ->label('Employees')
+                    ->color('info'),
+                TextEntry::make('sector')
+                    ->label('Sector')
+                    ->color('info'),
+                TextEntry::make('status')
+                    ->label('Status')
+                    ->color('info'),
+                TextEntry::make('registration_number')
+                    ->label('Registration Number')
+                    ->color('info'),
+                TextEntry::make('establishment_date')
+                    ->label('Establishment Date')
+                    ->color('info'),
+                TextEntry::make('establishment_date')
+                    ->label('Business Age')
+                    ->since()
+                    ->color('info'),
+                TextEntry::make('insurance')
+                    ->label('Insurance')
+                    ->color('info'),
+                TextEntry::make('record_maintained')
+                    ->label('Record Maintained')
+                    ->color('info'),
+                ])->columns(3),
+                ]),
+                Split::make([
+                Fieldset::make('More Business Information')
+                    ->schema([
+                        
+                        TextEntry::make('major_products')
+                            ->label('Major Products')
+                            ->color('info'),
+                        TextEntry::make('major_suppliers')
+                            ->label('Major Suppliers')
+                            ->color('info'),
+                        TextEntry::make('major_customers')
+                            ->label('Major Customers')
+                            ->color('info'),
+                        TextEntry::make('major_competitors')
+                            ->label('Major Competitors')
+                            ->color('info'),
+                        TextEntry::make('strengths')
+                            ->label('Strengths')
+                            ->color('info'),
+                        TextEntry::make('weaknesses')
+                            ->label('Weaknesses')
+                            ->color('info'),
+                        TextEntry::make('opportunities')
+                            ->label('Opportunities')
+                            ->color('info'),
+                        TextEntry::make('threats')
+                            ->label('Threats')
+                            ->color('info'),
+                        TextEntry::make('mitigations')
+                            ->label('Mitigations')
+                            ->color('info'),
+                        
+                    ])->columns(3),
+                ]),
+                Fieldset::make('Business Documents')
+                    ->schema([
+                        PdfViewerEntry::make('trading_license')
+                            ->label('Trading License')
+                            ->minHeight('40svh'),
+                        PdfViewerEntry::make('business_permit')
+                            ->label('Business Permit')
+                            ->minHeight('40svh'),
+                        PdfViewerEntry::make('certificate_of_incorporation')
+                            ->label('Certificate of Incorporation')
+                            ->minHeight('40svh'),
+                        PdfViewerEntry::make('health_certificate')
+                            ->label('Health Certificate')
+                            ->minHeight('40svh'),
+                    ])->columnSpanFull(),
+               
             ]);
     }
 
@@ -160,6 +279,7 @@ class BusinessResource extends Resource
             'index' => Pages\ListBusinesses::route('/'),
             'create' => Pages\CreateBusiness::route('/create'),
             'edit' => Pages\EditBusiness::route('/{record}/edit'),
+            'view' => Pages\ViewBusiness::route('/{record}'),
         ];
     }
 }

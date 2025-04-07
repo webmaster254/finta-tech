@@ -31,7 +31,7 @@ class CreateDefaultAccounts implements ShouldQueue
     {
         $branch = $event->branch;
 
-    $chartOfAccounts = config('chart-of-accounts.default');
+    $chartOfAccounts = config('gl_accounts.default');
 
 
     foreach ($chartOfAccounts as $type => $subtypes) {

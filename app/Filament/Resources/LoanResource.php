@@ -1000,6 +1000,7 @@ class LoanResource extends Resource implements HasShieldPermissions
             'create' => Pages\CreateLoan::route('/create'),
             'edit' => Pages\EditLoan::route('/{record}/edit'),
             'view' => Pages\ViewLoan::route('/{record}'),
+            'list_pending' => Pages\ListPendingLoans::route('/pending'),
         ];
     }
 

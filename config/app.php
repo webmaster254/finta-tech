@@ -171,6 +171,7 @@ return [
         App\Providers\MacroServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         App\Providers\TranslationServiceProvider::class,
+        App\Providers\CreditScoringServiceProvider::class,
     ])->toArray(),
 
     /*

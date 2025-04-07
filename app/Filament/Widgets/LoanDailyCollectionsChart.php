@@ -5,11 +5,12 @@ namespace App\Filament\Widgets;
 use Carbon\Carbon;
 use App\Models\Loan\Loan;
 use Illuminate\View\View;
+use Filament\Facades\Filament;
 use Illuminate\Support\Number;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Loan\LoanRepaymentSchedule;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 class LoanDailyCollectionsChart extends ApexChartWidget
 {
@@ -34,12 +35,13 @@ class LoanDailyCollectionsChart extends ApexChartWidget
     protected function getFooter(): string | View
     {
         $today = today();
+        $branchId = Filament::getTenant()->id;
 
-        $collections = Cache::remember('loan_daily_collections_' . $today->toDateString(), 300, function () use ($today) {
+        $collections = Cache::remember('loan_daily_collections_' . $today->toDateString() . '_' . $branchId, 300, function () use ($today, $branchId) {
             return DB::query()
                 ->select([
                     DB::raw('COALESCE(SUM(
-                        CASE 
+                        CASE
                             WHEN loans.status = "active" THEN (
                                 loan_repayment_schedules.principal +
                                 loan_repayment_schedules.interest +
@@ -50,7 +52,7 @@ class LoanDailyCollectionsChart extends ApexChartWidget
                         END
                     ), 0) as target_amount'),
                     DB::raw('COALESCE(SUM(
-                        CASE 
+                        CASE
                             WHEN loans.status = "active" THEN (
                                 loan_repayment_schedules.principal_repaid_derived +
                                 loan_repayment_schedules.interest_repaid_derived +
@@ -64,6 +66,7 @@ class LoanDailyCollectionsChart extends ApexChartWidget
                 ->from('loan_repayment_schedules')
                 ->join('loans', 'loans.id', '=', 'loan_repayment_schedules.loan_id')
                 ->whereDate('loan_repayment_schedules.due_date', $today)
+                ->where('loans.branch_id', $branchId)
                 ->first();
         });
 
@@ -95,8 +98,9 @@ class LoanDailyCollectionsChart extends ApexChartWidget
     {
         $startOfWeek = Carbon::now()->startOfWeek();
         $endOfWeek = Carbon::now()->endOfWeek();
+        $branchId = Filament::getTenant()->id;
 
-        $data = Cache::remember('loan_weekly_collections_' . $startOfWeek->toDateString(), 300, function () use ($startOfWeek, $endOfWeek) {
+        $data = Cache::remember('loan_weekly_collections_' . $startOfWeek->toDateString() . '_' . $branchId, 300, function () use ($startOfWeek, $endOfWeek, $branchId) {
             // Get all weekly data in a single query
             $weeklyData = DB::query()
                 ->select([
@@ -118,6 +122,7 @@ class LoanDailyCollectionsChart extends ApexChartWidget
                 ->join('loans', 'loans.id', '=', 'loan_repayment_schedules.loan_id')
                 ->where('loans.status', 'active')
                 ->whereBetween('loan_repayment_schedules.due_date', [$startOfWeek, $endOfWeek])
+                ->where('loans.branch_id', $branchId)
                 ->groupBy('due_date')
                 ->get()
                 ->keyBy(function ($item) {

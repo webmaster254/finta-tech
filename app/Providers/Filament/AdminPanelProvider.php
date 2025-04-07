@@ -15,6 +15,8 @@ use Filament\Support\Enums\MaxWidth;
 use App\Filament\Pages\ApproveClient;
 use Filament\widgets\UserMultiWidget;
 use Filament\Navigation\NavigationItem;
+use App\Filament\Pages\ListPendingLoans;
+use App\Filament\Resources\LoanResource;
 use App\Filament\Pages\Settings\Settings;
 use Filament\Forms\Components\FileUpload;
 use App\Filament\Pages\HealthCheckResults;
@@ -115,10 +117,6 @@ class AdminPanelProvider extends PanelProvider
                     ->url(fn (): string => ClientResource::getUrl())
                     ->icon('heroicon-o-user-group')
                     ->sort(1),
-                NavigationItem::make('Approve Clients')
-                    ->url(fn (): string => ApproveClient::getUrl())
-                    ->group('Clients Management')
-                    ->sort(2),
                 // ...
             ])
             ->middleware([

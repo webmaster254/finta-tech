@@ -46,7 +46,7 @@ class ApproveClient extends Page implements HasTable
                     }),
                 Action::make('reject')
                     ->label('Reject')
-                    ->icon('heroicon-o-check')
+                    ->icon('heroicon-o-x-circle')
                     ->action(function (Client $record) {
                         $record->status = 'rejected';
                         $record->save();

@@ -82,6 +82,7 @@ use Ysfkaya\FilamentPhoneInput\Tables\PhoneColumn;
 use Awcodes\Curator\Components\Forms\CuratorPicker;
 use Awcodes\TableRepeater\Components\TableRepeater;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Awcodes\Curator\Components\Tables\CuratorColumn;
 use Ysfkaya\FilamentPhoneInput\Infolists\PhoneEntry;
 use Ysfkaya\FilamentPhoneInput\PhoneInputNumberType;
 use Saade\FilamentAutograph\Forms\Components\SignaturePad;
@@ -178,12 +179,14 @@ public static function form(Form $form): Form
             ->label('Mobile')
             ->region('KE')
             ->displayFormat(PhoneNumberFormat::E164)
+            ->databaseFormat(PhoneNumberFormat::INTERNATIONAL)
             ->mask('9999999999')
             ->required(),
         FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('other_mobile_no')
             ->label('Other Mobile')
             ->region('KE')
             ->displayFormat(PhoneNumberFormat::E164)
+            ->databaseFormat(PhoneNumberFormat::INTERNATIONAL)
             ->mask('9999999999'),
         Forms\Components\TextInput::make('email')
             ->label('Email')
@@ -245,6 +248,10 @@ public static function form(Form $form): Form
              ->dotSize(2.0)
             ->lineMinWidth(0.5)
             ->lineMaxWidth(2.5)
+            ->backgroundColor('rgba(0,0,0,0)')  // Background color on light mode
+            ->backgroundColorOnDark('#f0a')
+            ->penColor('#000')
+            ->penColorOnDark('#fff') 
             ->throttle(16)
             ->minDistance(5)
             ->velocityFilterWeight(0.7) 
@@ -582,16 +589,28 @@ public static function form(Form $form): Form
 
                     ->schema([
                         Infolists\Components\TextEntry::make('status')
-                            ->color('info'),
-                        Infolists\Components\TextEntry::make('address')
-                            ->color('info'),
-                        Infolists\Components\TextEntry::make('city')
-                            ->color('info'),
-                        Infolists\Components\TextEntry::make('state')
-                            ->color('info'),
+                            ->badge(),
+                        Infolists\Components\ImageEntry::make('id_front')
+                            ->getStateUsing(function($record) {
+                                $media = Media::where('id', $record->id_front)->first();
+                                return $media ? $media->path : null;
+                            }),
+                        Infolists\Components\ImageEntry::make('id_back')
+                            ->getStateUsing(function($record) {
+                                $media = Media::where('id', $record->id_back)->first();
+                                return $media ? $media->path : null;
+                            }),
                         Infolists\Components\TextEntry::make('email')
                             ->color('info')
                             ->columnSpan(2),
+                        Infolists\Components\TextEntry::make('education_level')
+                            ->color('info'),
+                        Infolists\Components\TextEntry::make('type_of_tech')
+                            ->color('info')
+                            ->label('Type of Technology'),
+                        Infolists\Components\TextEntry::make('source_of_income')
+                            ->color('info')
+                            ->label('Source of Income'),
                         Infolists\Components\TextEntry::make('dob')
                             ->color('info')
                             ->label('Date of Birth'),
@@ -604,7 +623,7 @@ public static function form(Form $form): Form
                             ->color('info'),
                         Infolists\Components\TextEntry::make('created_at')
                             ->color('info')
-                            ->label('Created On'),
+                            ->label('Joined Date'),
                     ])->columns(3),
 
                 ]),
@@ -1169,6 +1188,7 @@ public static function form(Form $form): Form
             'create' => Pages\CreateClient::route('/create'),
             'edit' => Pages\EditClient::route('/{record}/edit'),
             'view' => Pages\ViewClient::route('/{record}'),
+            //'manage_employment_info' => Pages\ManageEmploymentInfo::route('/{record}/manage-employment-info'),
         ];
     }
 
@@ -1178,6 +1198,7 @@ public static function form(Form $form): Form
     return $page->generateNavigationItems([
         Pages\ViewClient::class,
         Pages\EditClient::class,
+        Pages\ManageEmploymentInfo::class,
     ]);
 }
 

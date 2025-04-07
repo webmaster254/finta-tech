@@ -8,6 +8,7 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Fieldset;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -24,6 +25,7 @@ class BusinessRelationManager extends RelationManager
                     ->schema([
                         Forms\Components\TextInput::make('current_stock')
                             ->numeric()
+                            ->default(0)
                             ->prefix('KES')
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
@@ -33,11 +35,13 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('Operating Capital')
                             ->numeric()
+                            ->default(0)
                             ->required(),
                         Forms\Components\TextInput::make('average_weekly_sales')
                             ->prefix('KES')
                             ->label('Average Weekly Sales')
                             ->numeric()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateGrossProfit($get, $set))
@@ -45,7 +49,8 @@ class BusinessRelationManager extends RelationManager
                         Forms\Components\TextInput::make('average_weekly_purchase')
                             ->prefix('KES')
                             ->label('Average Weekly Purchase')
-                            ->numeric()
+                            ->numeric() 
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateCostOfSales($get, $set))
@@ -54,6 +59,7 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('Avg Weekly Stock Bal.')
                             ->numeric()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateCostOfSales($get, $set))
@@ -62,6 +68,7 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('Cost of Sales')
                             ->readOnly()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateGrossProfit($get, $set))
@@ -71,6 +78,7 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('Gross Profit')
                             ->numeric()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateNetProfit($get, $set))
@@ -85,6 +93,7 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('House Rent')
                             ->numeric()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateHouseholdExpense($get, $set))
@@ -93,6 +102,7 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('House Electricity')
                             ->numeric()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateHouseholdExpense($get, $set))
@@ -101,6 +111,7 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('House Food')
                             ->numeric()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateHouseholdExpense($get, $set))
@@ -109,6 +120,7 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('House Transport')
                             ->numeric()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateHouseholdExpense($get, $set))
@@ -117,6 +129,7 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('Clothings')
                             ->numeric()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateHouseholdExpense($get, $set))
@@ -125,6 +138,7 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('School Fees')
                             ->numeric()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateHouseholdExpense($get, $set))
@@ -132,6 +146,7 @@ class BusinessRelationManager extends RelationManager
                         Forms\Components\TextInput::make('hs_total')
                             ->numeric()
                             ->readOnly()
+                            ->default(0)
                             ->label('Household Total')
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
@@ -146,6 +161,7 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('Business Rent')
                             ->numeric()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateBusinessExpense($get, $set))
@@ -154,6 +170,7 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('Business Electricity')
                             ->numeric()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateBusinessExpense($get, $set))
@@ -162,6 +179,7 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('Business License')
                             ->numeric()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateBusinessExpense($get, $set))
@@ -170,6 +188,7 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('Business Transport')
                             ->numeric()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateBusinessExpense($get, $set))
@@ -178,6 +197,7 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('Business Wages')
                             ->numeric()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateBusinessExpense($get, $set))
@@ -186,6 +206,7 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('Business Contributions')
                             ->numeric()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateBusinessExpense($get, $set))
@@ -194,6 +215,7 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('Loan Repayment')
                             ->numeric()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateBusinessExpense($get, $set))
@@ -202,6 +224,7 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('Business Other Drawings')
                             ->numeric()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateBusinessExpense($get, $set))
@@ -210,6 +233,7 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('Business Spoilts Goods')
                             ->numeric()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateBusinessExpense($get, $set))
@@ -218,6 +242,7 @@ class BusinessRelationManager extends RelationManager
                             ->prefix('KES')
                             ->label('Owner Salary')
                             ->numeric()
+                            ->default(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateBusinessExpense($get, $set))
@@ -225,6 +250,7 @@ class BusinessRelationManager extends RelationManager
                         Forms\Components\TextInput::make('bs_total')
                             ->prefix('KES')
                             ->label('Business Total')
+                            ->default(0)
                             ->numeric()
                             ->readOnly()
                             ->live(onBlur: true)
@@ -233,7 +259,7 @@ class BusinessRelationManager extends RelationManager
                             ->required(),
                     ])
                     ->columns(4),
-                Section::make('Net Profit')
+                Fieldset::make('Net Profit')
                     ->schema([
                         Forms\Components\TextInput::make('net_profit')
                         ->prefix('KES')
@@ -249,7 +275,19 @@ class BusinessRelationManager extends RelationManager
                         ->readOnly()
                         ->required(),
                     ])
-                    ->columns(2)
+                    ->columns(2),
+
+                Fieldset::make('Mpesa Statement')
+                    ->schema([
+                        Forms\Components\FileUpload::make('mpesa_statement')
+                            ->label('Mpesa Statement')
+                            ->required(),
+                        Forms\Components\TextInput::make('mpesa_code')
+                            ->label('Mpesa Code')
+                            ->required(),
+                    ])
+                    ->columns(2),
+
             ]);
     }
 
@@ -259,45 +297,42 @@ class BusinessRelationManager extends RelationManager
             ->recordTitleAttribute('id')
             ->columns([
                 Tables\Columns\TextColumn::make('business.name')
-                    ->label('Business')
-                    ->searchable()
-                    ->sortable(),
+                    ->label('Business Name'),
                 Tables\Columns\TextColumn::make('current_stock')
                     ->label('Current Stock')
                     ->prefix('KES')
-                    ->numeric()
-                    ->sortable(),
+                    ->numeric(),
                 Tables\Columns\TextColumn::make('cost_of_sales')
                     ->label('Cost of Sales')
                     ->prefix('KES')
-                    ->numeric()
-                    ->sortable(),
+                    ->numeric(),
                 Tables\Columns\TextColumn::make('hs_total')
                     ->label('Household Expense Total')
                     ->prefix('KES')
-                    ->numeric()
-                    ->sortable(),
+                    ->numeric(),
                 Tables\Columns\TextColumn::make('bs_total')
                     ->label('Business Expense Total')
                     ->prefix('KES')
-                    ->numeric()
-                    ->sortable(),
+                    ->numeric(),
                 Tables\Columns\TextColumn::make('gross_profit')
                     ->label('Gross Profit')
                     ->prefix('KES')
-                    ->numeric()
-                    ->sortable(),
+                    ->numeric(),
                 Tables\Columns\TextColumn::make('net_profit')
                     ->label('Net Profit')
                     ->prefix('KES')
-                    ->numeric()
-                    ->sortable(),
+                    ->numeric(),
             ])
             ->filters([
                 //
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
+                ->createAnother(false)
+                ->successNotificationTitle('Business Overview added')
+                ->successRedirectUrl(fn (Model $record): string => route('business.view', [
+                    'business' => $record,
+                ]))
                 ->label('Add Business Overview')
                 ->icon('heroicon-o-document-text')
                 ->modalHeading('Add Business Overview'),
