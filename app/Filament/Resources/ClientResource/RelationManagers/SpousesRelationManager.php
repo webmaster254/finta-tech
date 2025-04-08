@@ -10,9 +10,9 @@ use App\Enums\Relationship;
 use Cheesegrits\FilamentPhoneNumbers;
 use Brick\PhoneNumber\PhoneNumberFormat;
 use Illuminate\Database\Eloquent\Builder;
-use Awcodes\Curator\Components\Forms\CuratorPicker;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Resources\RelationManagers\RelationManager;
+use Joaopaulolndev\FilamentPdfViewer\Forms\Components\PdfViewerField;
 
 class SpousesRelationManager extends RelationManager
 {
@@ -43,7 +43,9 @@ class SpousesRelationManager extends RelationManager
                     ->maxLength(255),
                 Forms\Components\Textarea::make('address')
                     ->maxLength(1000),
-                CuratorPicker::make('consent_form')
+                PdfViewerField::make('consent_form')
+                    ->label('View the PDF')
+                    ->minHeight('40svh')
                     ->required(),
             ])->columns(2);
     }

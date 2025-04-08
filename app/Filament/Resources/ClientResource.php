@@ -195,9 +195,6 @@ public static function form(Form $form): Form
         Forms\Components\TextInput::make('kra_pin')
             ->label('KRA PIN')
             ->maxLength(25),
-        Forms\Components\TextInput::make('postal_code')
-            ->label('Postal Code')
-            ->maxLength(25),
         Forms\Components\DatePicker::make('dob')
             ->label('Date of Birth')
             ->required(),

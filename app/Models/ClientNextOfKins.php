@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Client;
+use App\Models\Profession;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

@@ -21,19 +21,20 @@ return new class extends Migration
             $table->string('postal_code')->nullable();
             $table->string('type_of_tech')->nullable();
             $table->boolean('is_published')->default(false);
-            $table->json('addresses')->nullable();
-            $table->string('spouce_id')->nullable();
-            $table->string('spouce_name')->nullable();
-            $table->string('spouce_mobile')->nullable();
-            $table->string('spouce_occupation')->nullable();
             $table->json('next_of_kins')->nullable();
             $table->string('source_of_income')->nullable();
             $table->string('id_front')->nullable();
             $table->string('id_back')->nullable();
             $table->string('hashed_mobile')->nullable();
             $table->string('signature')->nullable();
-            $table->string('consent_form')->nullable();
-            $table->json('referees')->nullable();
+            $table->string('privacy_signature')->nullable();
+            $table->string('reg_form')->nullable();
+            $table->boolean('terms_and_condition')->default(false);
+            $table->boolean('privacy_policy')->default(false);
+            $table->boolean('signature_confirmed')->default(false);
+            $table->boolean('referees_contacted')->default(false);
+            $table->string('lead_source')->nullable();
+            $table->foreignId('existing_client')->constrained('clients')->null();
         });
     }
  
@@ -53,19 +54,18 @@ return new class extends Migration
                 'postal_code',
                 'type_of_tech',
                 'is_published',
-                'addresses',
-                'spouce_id',    
-                'spouce_name',  
-                'spouce_mobile',
-                'spouce_occupation',
-                'next_of_kins',
                 'source_of_income',
                 'id_front',
                 'id_back',
                 'hashed_mobile',
                 'signature',
-                'consent_form',
-                'referees',
+                'privacy_signature',
+                'terms_and_condition',
+                'privacy_policy',
+                'signature_confirmed',
+                'referees_contacted',
+                'lead_source',
+                'existing_client',
             ]);
         });
     }

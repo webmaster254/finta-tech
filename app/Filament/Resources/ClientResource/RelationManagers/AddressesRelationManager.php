@@ -11,7 +11,10 @@ use Filament\Forms\Set;
 use Filament\Forms\Form;
 use App\Models\SubCounty;
 use Filament\Tables\Table;
+use Filament\Infolists\Infolist;
 use Dotswan\MapPicker\Fields\Map;
+use Infolists\Components\TextEntry;
+use Dotswan\MapPicker\Infolists\MapEntry;
 use Illuminate\Database\Eloquent\Builder;
 use Awcodes\Curator\Components\Forms\CuratorPicker;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -81,7 +84,7 @@ class AddressesRelationManager extends RelationManager
                 ->live()
                     ->label('Location')
                     ->showMyLocationButton(true)
-                    ->liveLocation(true, true, 10000)  // Updates live location every 10 seconds
+                    //->liveLocation(true, true, 10000)  // Updates live location every 10 seconds
                     ->showMarker()
                     ->draggable()
                     ->columnSpanFull()
@@ -127,7 +130,6 @@ class AddressesRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('floor_no'),
                 Tables\Columns\TextColumn::make('house_no'),
                 Tables\Columns\TextColumn::make('estate'),
-                Tables\Columns\TextColumn::make('location'),
                 Tables\Columns\TextColumn::make('latitude'),
                 Tables\Columns\TextColumn::make('longitude'),
                 Tables\Columns\ImageColumn::make('image'),
@@ -142,6 +144,11 @@ class AddressesRelationManager extends RelationManager
                      ->icon('heroicon-o-plus-circle'),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->modalHeading('View Address')
+                    ->modalDescription('View address information')
+                    ->modalIcon('heroicon-o-building-office-2')
+                    ->modalIconColor('success'),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -151,6 +158,7 @@ class AddressesRelationManager extends RelationManager
                 ]),
             ]);
     }
+
     public function isReadOnly(): bool
     {
         return false;

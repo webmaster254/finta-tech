@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('gender')->nullable();
             $table->string('marital_status')->nullable();
             $table->bigInteger('country_id')->unsigned()->nullable();
-            $table->foreignIdFor(Profession::class)->constrained()->onUpdate('cascade')->onDelete('cascade');
+            $table->foreignId('profession_id')->constrained()->onUpdate('cascade')->onDelete('cascade');
             $table->string('mobile')->nullable();
             $table->string('email')->nullable();
             $table->date('dob')->nullable();

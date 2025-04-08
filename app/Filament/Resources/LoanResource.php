@@ -298,21 +298,21 @@ class LoanResource extends Resource implements HasShieldPermissions
                 ->importer(LoanImporter::class),
                 ExportAction::make()
                 ->exporter(LoanExporter::class),
-               Action::make('disburse')
-                    ->requiresConfirmation()
-                    ->label('Bank Disburse')
-                   //->visible(fn (): bool => auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() )
-                    ->visible(fn (): bool => auth()->user()->isAdmin() )
-                    ->action(function (Loan $loan){
-                       $disbursed= DisburseApprovedLoanJob::dispatch()->onQueue('default');
-                      Notification::make()
-                                    ->success()
-                                    ->title('Loan Sent to Bank')
-                                    ->body('The Approved Loans has been sent to bank successfully.')
-                                    ->send();
-                      return $disbursed;
+            //    Action::make('disburse')
+            //         ->requiresConfirmation()
+            //         ->label('Bank Disburse')
+            //        //->visible(fn (): bool => auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() )
+            //         ->visible(fn (): bool => auth()->user()->isAdmin() )
+            //         ->action(function (Loan $loan){
+            //            $disbursed= DisburseApprovedLoanJob::dispatch()->onQueue('default');
+            //           Notification::make()
+            //                         ->success()
+            //                         ->title('Loan Sent to Bank')
+            //                         ->body('The Approved Loans has been sent to bank successfully.')
+            //                         ->send();
+            //           return $disbursed;
                         
-                    })
+            //         })
             ])
             ->columns([
                 Tables\Columns\TextColumn::make('loan_account_number')

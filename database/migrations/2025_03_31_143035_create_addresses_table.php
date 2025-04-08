@@ -16,9 +16,9 @@ return new class extends Migration
             $table->foreignId('client_id')->constrained()->cascadeOnDelete();
             $table->string('address_type')->nullable();
             $table->string('country')->nullable();
-            $table->string('county')->nullable();
-            $table->string('sub_county')->nullable();
-            $table->string('ward')->nullable();
+            $table->foreignId('county_id')->constrained('county')->nullable();
+            $table->foreignId('sub_county_id')->constrained('subcounty')->nullable();
+            $table->foreignId('ward_id')->constrained('towns')->nullable();
             $table->string('village')->nullable();
             $table->string('street')->nullable();
             $table->string('landmark')->nullable();

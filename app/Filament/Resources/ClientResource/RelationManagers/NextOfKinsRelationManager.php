@@ -12,6 +12,7 @@ use App\Enums\MaritalStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Resources\RelationManagers\RelationManager;
+use Cheesegrits\FilamentPhoneNumbers;
 
 class NextOfKinsRelationManager extends RelationManager
 {
@@ -38,9 +39,12 @@ class NextOfKinsRelationManager extends RelationManager
                     ->required(),
                 Forms\Components\Select::make('marital_status')
                     ->options(MaritalStatus::class),
-                Forms\Components\TextInput::make('mobile')
-                    ->tel()
-                    ->maxLength(255),
+                FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('mobile')
+                    ->label('Mobile')
+                    ->region('KE')
+                    ->displayFormat(PhoneNumberFormat::E164)
+                    ->mask('9999999999')
+                    ->required(),
                 Forms\Components\TextInput::make('email')
                     ->email()
                     ->maxLength(255),

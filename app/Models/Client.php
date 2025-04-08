@@ -70,15 +70,14 @@ class Client extends Model implements HasName, HasAvatar
         'aka',
         'other_mobile_no',
         'kra_pin',
-        'postal_code',
-        'addresses',
-        'spouce_id',
-        'spouce_name',
-        'spouce_mobile',
-        'consent_form',
-        'spouce_occupation',
-        'next_of_kins',
-        'referees',
+        'reg_form',
+        'privacy_signature',
+        'terms_and_condition',
+        'privacy_policy',
+        'signature_confirmed',
+        'referees_contacted',
+        'lead_source',
+        'existing_client',
     ];
 
    protected $casts = [
@@ -128,9 +127,9 @@ public function sent_by(): BelongsTo
 }
 
 
- public function addresses(): HasMany
+ public function addresses()
  {
-     return $this->hasMany(Address::class);
+     return $this->hasMany(Address::class,'client_id');
  }
  
  public function sms(): HasMany
@@ -148,9 +147,9 @@ public function employment()
     return $this->hasOne(EmploymentInfo::class);
 }
 
-public function spouse(): BelongsTo
+public function spouse()
 {
-    return $this->belongsTo(Spouse::class);
+    return $this->hasOne(Spouse::class);
 }
 
  public function referees()
