@@ -6,18 +6,21 @@ use App\Models\Client;
 use Filament\Pages\Page;
 use Filament\Tables\Table;
 use Filament\Facades\Filament;
-use Filament\Forms\Components\Checkbox;
 use Filament\Tables\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Repeater;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Forms\Components\FileUpload;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Wizard\Step;
+use App\Jobs\SendRegistrationNotificationJob;
 use Filament\Forms\Components\MarkdownEditor;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Awcodes\Curator\Components\Forms\CuratorPicker;
@@ -50,31 +53,20 @@ class ApproveClient extends Page implements HasTable
             ])
             
             ->actions([
+                ActionGroup::make([
                 Action::make('approve')
                     ->label('Approve Client')
                     ->icon('heroicon-o-check')
-                    ->action(function (array $data, Client $record): void {
-                        // First check if the referees relationship works now
-                        if ($record->referees && $record->referees->count() > 0) {
-                            dd([
-                                'referee_name' => $record->referees->first()->name, // Use 'name' instead of 'first_name'
-                                'spouse_name' => $record->spouse->name,
-                                'referees_count' => $record->referees->count()
-                            ]);
-                        } else {
-                            // If still not working, show debug info
-                            $clientWithReferees = Client::with('referees')->find($record->id);
-                            dd([
-                                'client_id' => $record->id,
-                                'has_referees_relation' => method_exists($record, 'referees'),
-                                'referees_from_record' => $record->referees,
-                                'referees_from_eager_load' => $clientWithReferees->referees,
-                                'referees_count_from_db' => \DB::table('referees')->where('client_id', $record->id)->count(),
-                                'all_referees_from_db' => \DB::table('referees')->where('client_id', $record->id)->get(),
-                                'spouse' => $record->spouse
-                            ]);
-                        }
+                    ->action(function (Client $record) {
+                        $record->changeStatus('approved');
+                        SendRegistrationNotificationJob::dispatch($record);
+                        Notification::make()
+                                    ->success()
+                                    ->title('Client Approved')
+                                    ->body('The client has been approved successfully.')
+                                    ->send();
                     })
+                    ->color('success')
                     ->fillForm(fn (Client $record): array => [
                         'first_name' => $record->first_name,
                         'last_name' => $record->last_name,
@@ -95,12 +87,17 @@ class ApproveClient extends Page implements HasTable
                         'type_of_tech' => $record->type_of_tech,
                         'loan_officer' => $record->loan_officer->full_name,
                         'addresses' => $record->addresses && $record->addresses->count() > 0 ? $record->addresses->map(function($address) {
+                            // Load the address with its relationships if they're not already loaded
+                            if (!$address->relationLoaded('county') || !$address->relationLoaded('subCounty') || !$address->relationLoaded('ward')) {
+                                $address->load(['county', 'subCounty', 'ward']);
+                            }
+                            
                             return [
                                 'address_type' => $address->address_type,
                                 'country' => $address->country,
-                                'county' => $address->county->name,
-                                'sub_county' => $address->subCounty->name,
-                                'ward' => $address->town->name,
+                                'county_id' => $address->county ? $address->county->name : null,
+                                'sub_county_id' => $address->subCounty ? $address->subCounty->name : null,
+                                'ward_id' => $address->ward ? $address->ward->name : null,
                                 'village' => $address->village,
                                 'street' => $address->street,
                                 'landmark' => $address->landmark,
@@ -120,6 +117,11 @@ class ApproveClient extends Page implements HasTable
                         'consent_form' => $record->spouse->consent_form ?? null,
                         'lead_source' => $record->lead_source ?? null,
                         'existing_client' => $record->existing_client ?? null,
+                        'terms_and_condition' => $record->terms_and_condition ?? null,
+                        'privacy_policy' => $record->privacy_policy ?? null,
+                        'signature_confirmed' => $record->signature_confirmed ?? null,
+                        'referees_contacted' => $record->referees_contacted ?? null,
+                        'reg_form' => $record->reg_form ?? null,
                         // Get the first next of kin data
                         'next_of_kin' => $record->next_of_kins && $record->next_of_kins->count() > 0 ? $record->next_of_kins->map(function($nok) {
                             return [
@@ -209,16 +211,16 @@ class ApproveClient extends Page implements HasTable
                                         TextInput::make('country')
                                             ->label('Country')
                                             ->disabled(),
-                                        TextInput::make('county')
+                                        TextInput::make('county_id')
                                             ->label('County')
                                             ->disabled(),
-                                        TextInput::make('sub_county')
+                                        TextInput::make('sub_county_id')
                                             ->label('Sub County')
                                             ->disabled(),
-                                        TextInput::make('ward')
+                                        TextInput::make('ward_id')
                                             ->label('Ward')
                                             ->disabled(),
-                                        TextInput::make('town')
+                                        TextInput::make('village')
                                             ->label('Village')
                                             ->disabled(),
                                         TextInput::make('street')
@@ -245,7 +247,7 @@ class ApproveClient extends Page implements HasTable
                                         TextInput::make('estate')
                                             ->label('Estate')
                                             ->disabled(),
-                                        TextInput::make('image')
+                                        CuratorPicker::make('image')
                                             ->label('Image')
                                             ->disabled(),
                                         TextInput::make('image_description')
@@ -347,15 +349,23 @@ class ApproveClient extends Page implements HasTable
                             ->schema([
                                 Checkbox::make('terms_and_condition')
                                 ->label('Clients accepts Terms and Conditions?')
+                                ->accepted()
+                                ->disabled()
                                 ->required(),
                                 Checkbox::make('privacy_policy')
                                 ->label('Clients accepts Privacy Policy?')
+                                ->accepted()
+                                ->disabled()
                                 ->required(),
                                 Checkbox::make('signature_confirmed')
                                 ->label('Client Signature Confirmed?')
+                                ->accepted()
+                                ->disabled()
                                 ->required(),
                                 Checkbox::make('referees_contacted')
                                 ->label('Client Referees Contacted?')
+                                ->accepted()
+                                ->disabled()
                                 ->required(),
                                 PdfViewerField::make('reg_form')
                                 ->label('Registration Form')
@@ -365,14 +375,38 @@ class ApproveClient extends Page implements HasTable
                                 ->disabled(),
                             ]),
                     ]),
+
+                    Action::make('disapprove')
+                    ->label('Disapprove')
+                    ->icon('heroicon-o-x-circle')
+                    ->action(function (Client $record) {
+                        $record->changeStatus('pending');
+                        Notification::make()
+                                    ->success()
+                                    ->title('Client Disapproved')
+                                    ->body('The client has been disapproved successfully.')
+                                    ->send();
+                    })
+                    ->color('warning')
+                    ->requiresConfirmation(),
+                    
                 Action::make('reject')
                     ->label('Reject')
                     ->icon('heroicon-o-x-circle')
-                    // ->action(function (Client $record) {
-                    //     $record->status = 'rejected';
-                    //     $record->save();
-                    // }),
-            ]);
-           
+                    ->action(function (Client $record) {
+                        $record->changeStatus('rejected');
+                        Notification::make()
+                                    ->success()
+                                    ->title('Client Rejected')
+                                    ->body('The client has been rejected successfully.')
+                                    ->send();
+                    })
+                    ->color('danger')
+                    ->requiresConfirmation(),
+               
+             
+                ]),
+            
+        ]);
     }
 }

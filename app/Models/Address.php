@@ -6,6 +6,7 @@ use App\Models\Town;
 use App\Models\County;
 use App\Models\SubCounty;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Address extends Model
@@ -46,17 +47,17 @@ class Address extends Model
         return $this->belongsTo(Client::class);
     }
 
-    public function counties(): BelongsTo
+    public function county(): BelongsTo
     {
         return $this->belongsTo(County::class);
     }
 
-    public function subCounties(): BelongsTo
+    public function subCounty(): BelongsTo
     {
         return $this->belongsTo(SubCounty::class);
     }
 
-    public function towns(): BelongsTo
+    public function ward(): BelongsTo
     {
         return $this->belongsTo(Town::class);
     }

@@ -82,9 +82,10 @@ class Client extends Model implements HasName, HasAvatar
 
    protected $casts = [
     'status' => Status::class,
-    //'referees' => 'array',
-    // 'addresses' => 'array',
-    // 'next_of_kins' => 'array',
+    'terms_and_condition' => 'boolean',
+    'privacy_policy' => 'boolean',
+    'signature_confirmed' => 'boolean',
+    'referees_contacted' => 'boolean',
    ];
 
    protected static function booted(): void

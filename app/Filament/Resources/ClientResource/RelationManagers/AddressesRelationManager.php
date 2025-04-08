@@ -18,6 +18,8 @@ use Dotswan\MapPicker\Infolists\MapEntry;
 use Illuminate\Database\Eloquent\Builder;
 use Awcodes\Curator\Components\Forms\CuratorPicker;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Awcodes\Curator\Components\Tables\CuratorColumn;
+use Awcodes\Curator\PathGenerators\DatePathGenerator;
 use Filament\Resources\RelationManagers\RelationManager;
 use Parfaitementweb\FilamentCountryField\Forms\Components\Country;
 
@@ -43,22 +45,22 @@ class AddressesRelationManager extends RelationManager
                 Country::make('country')
                     ->label('Country')
                     ->required(),
-                Forms\Components\Select::make('county')
+                Forms\Components\Select::make('county_id')
                     ->label('County')
                     ->options(County::all()->pluck('name', 'id'))
                     ->live()
                     ->required(),
-                Forms\Components\Select::make('sub_county')
+                Forms\Components\Select::make('sub_county_id')
                     ->label('Sub County')
                     ->live()
                     ->options(fn (Get $get) => SubCounty::query()
-                            ->where('county_id', $get('county'))
+                            ->where('county_id', $get('county_id'))
                             ->get()
                             ->pluck('name', 'id'))
                     ->required(),
-                Forms\Components\Select::make('ward')
+                Forms\Components\Select::make('ward_id')
                    ->options(fn (Get $get) => Town::query()
-                            ->where('sc_id', $get('sub_county'))
+                            ->where('sc_id', $get('sub_county_id'))
                             ->get()
                             ->pluck('name', 'id'))
                     ->label('Ward')
@@ -107,6 +109,8 @@ class AddressesRelationManager extends RelationManager
                 ->readOnly(),
                 CuratorPicker::make('image')
                     ->label('Image')
+                    ->preserveFilenames()
+                    ->pathGenerator(DatePathGenerator::class)
                     ->required(),  
                 Forms\Components\Textarea::make('image_description')
                     ->maxLength(20),    
@@ -132,7 +136,7 @@ class AddressesRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('estate'),
                 Tables\Columns\TextColumn::make('latitude'),
                 Tables\Columns\TextColumn::make('longitude'),
-                Tables\Columns\ImageColumn::make('image'),
+                CuratorColumn::make('image'),
                 Tables\Columns\TextColumn::make('image_description'),
             ])
             ->filters([
