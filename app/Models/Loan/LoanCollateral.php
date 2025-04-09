@@ -12,6 +12,7 @@ class LoanCollateral extends Model
 
     protected $fillable = [
         'loan_id',
+        'created_by_id',
         'loan_collateral_type_id',
         'description',
         'value',

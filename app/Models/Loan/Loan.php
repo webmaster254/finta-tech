@@ -48,7 +48,7 @@ class Loan extends Model
 
        protected $fillable = [
            'client_id',
-           'client_type',
+           'client_type_id',
            'created_by_id',
            'branch_id',
            'group_id',
@@ -200,7 +200,7 @@ public function charges()
        }
        public function client_type()
     {
-        return $this->belongsTo(ClientType::class, 'name', 'client_type');
+        return $this->belongsTo(ClientType::class, 'id', 'client_type_id');
     }
     public function branch(): BelongsTo
     {

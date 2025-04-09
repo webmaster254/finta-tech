@@ -16,6 +16,8 @@ use Filament\Tables\Table;
 use App\Enums\MaritalStatus;
 use Tables\Columns\TextColumn;
 use Awcodes\Curator\Models\Media;
+use Brick\PhoneNumber\PhoneNumberFormat;
+use Cheesegrits\FilamentPhoneNumbers;
 use App\Models\ClientRelationship;
 use App\Models\Loan\LoanGuarantor;
 use Filament\Forms\Components\Grid;
@@ -276,10 +278,13 @@ class GuarantorsRelationManager extends RelationManager
                                                     ->required()
                                                     ->preload()
                                                     ->searchable(),
-                                                TextInput::make('mobile')
-                                                    ->required()
-                                                    ->tel()
-                                                    ->maxLength(255),
+                                                FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('mobile')
+                                                    ->label('Mobile')
+                                                    ->region('KE')
+                                                    ->displayFormat(PhoneNumberFormat::E164)
+                                                    ->databaseFormat(PhoneNumberFormat::INTERNATIONAL)
+                                                    ->mask('9999999999')
+                                                    ->required(),
                                                 TextInput::make('email')
                                                     ->email()
                                                     ->maxLength(255),

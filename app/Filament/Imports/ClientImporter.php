@@ -36,7 +36,7 @@ class ClientImporter extends Importer
                 ->rules(['max:255']),
             ImportColumn::make('profession')
                 ->relationship(),
-            ImportColumn::make('client_type')
+            ImportColumn::make('client_type_id')
                 ->relationship(),
             ImportColumn::make('mobile')
                 ->rules(['max:255']),

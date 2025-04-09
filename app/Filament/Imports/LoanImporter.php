@@ -18,7 +18,8 @@ class LoanImporter extends Importer
                 ->relationship(),
             ImportColumn::make('created_by_id')
                 ->relationship(),
-            ImportColumn::make('client_type'),
+            ImportColumn::make('client_type_id')
+                ->relationship(),
             ImportColumn::make('currency_id')
                 ->relationship(),
             ImportColumn::make('loan_product_id')

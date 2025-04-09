@@ -11,7 +11,9 @@ use App\Enums\CollateralStatus;
 use Illuminate\Support\Facades\Auth;
 use Filament\Tables\Actions\ActionGroup;
 use Illuminate\Database\Eloquent\Builder;
+use Awcodes\Curator\Components\Forms\CuratorPicker;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Awcodes\Curator\Components\Tables\CuratorColumn;
 use Filament\Resources\RelationManagers\RelationManager;
 
 class CollateralRelationManager extends RelationManager
@@ -32,8 +34,7 @@ class CollateralRelationManager extends RelationManager
                     ->required()
                     ->numeric(),
                 Forms\Components\Textarea::make('description'),
-                Forms\Components\FileUpload::make('file')
-                    ->image()
+                CuratorPicker::make('file')
                     ->required(),
                 Forms\Components\Select::make('status')
                     ->options(CollateralStatus::class)
@@ -51,7 +52,7 @@ class CollateralRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('value')
                     ->money(Currency::where('is_default', 1)->first()->symbol),
                 Tables\Columns\TextColumn::make('description'),
-                Tables\Columns\ImageColumn::make('file'),
+                CuratorColumn::make('file'),
             ])
             ->filters([
                 //

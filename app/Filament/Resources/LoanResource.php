@@ -125,7 +125,7 @@ class LoanResource extends Resource implements HasShieldPermissions
                         ->default(Currency::where('is_default', 1)->value('id')),
 
 
-                        Select::make('client_type')
+                        Select::make('client_type_id')
                             ->label('Client Type')
                             ->searchable()
                             ->options(ClientType::all()->pluck('name', 'id'))
@@ -136,7 +136,7 @@ class LoanResource extends Resource implements HasShieldPermissions
                                     ->getChildComponentContainer()
                                     ->fill()),
                                     Grid::make(1)
-                                    ->schema(fn (Get $get): array => match ($get('client_type')) {
+                                    ->schema(fn (Get $get): array => match ($get('client_type_id')) {
                                         '1' => [
                                             Forms\Components\Select::make('account_number')
                                                 ->label('Client Account Number')
@@ -298,21 +298,6 @@ class LoanResource extends Resource implements HasShieldPermissions
                 ->importer(LoanImporter::class),
                 ExportAction::make()
                 ->exporter(LoanExporter::class),
-            //    Action::make('disburse')
-            //         ->requiresConfirmation()
-            //         ->label('Bank Disburse')
-            //        //->visible(fn (): bool => auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() )
-            //         ->visible(fn (): bool => auth()->user()->isAdmin() )
-            //         ->action(function (Loan $loan){
-            //            $disbursed= DisburseApprovedLoanJob::dispatch()->onQueue('default');
-            //           Notification::make()
-            //                         ->success()
-            //                         ->title('Loan Sent to Bank')
-            //                         ->body('The Approved Loans has been sent to bank successfully.')
-            //                         ->send();
-            //           return $disbursed;
-                        
-            //         })
             ])
             ->columns([
                 Tables\Columns\TextColumn::make('loan_account_number')

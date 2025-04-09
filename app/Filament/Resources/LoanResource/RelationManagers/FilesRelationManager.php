@@ -6,6 +6,7 @@ use Filament\Forms;
 use Filament\Tables;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 use Filament\Tables\Actions\ActionGroup;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -19,6 +20,10 @@ class FilesRelationManager extends RelationManager
     {
         return $form
             ->schema([
+                Forms\Components\Hidden::make('loan_id')
+                    ->default($this->getOwnerRecord()->id),
+                Forms\Components\Hidden::make('created_by_id')
+                    ->default(Auth::id()),
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->placeholder('Enter Title Name'),

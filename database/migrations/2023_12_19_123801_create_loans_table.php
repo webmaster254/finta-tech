@@ -22,7 +22,7 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->foreignId('created_by_id')->constrained('users');
             $table->foreignIdFor(Branch::class)->constrained()->onUpdate('cascade')->onDelete('cascade');
-            $table->string('client_type')->default('client');
+            $table->foreignId('client_type_id')->constrained('client_types')->onUpdate('cascade')->onDelete('cascade');
             $table->foreignIdFor(Client::class)->constrained()->onUpdate('cascade')->onDelete('cascade');
             $table->bigInteger('group_id')->unsigned()->nullable();
             $table->foreignIdFor(Currency::class)->constrained()->onUpdate('cascade')->onDelete('cascade');
