@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\LoanCollateralTypeResource\Pages;
 use App\Filament\Resources\LoanCollateralTypeResource\RelationManagers;
+use App\Filament\Clusters\Configuration;
 
 class LoanCollateralTypeResource extends Resource
 {
@@ -21,6 +22,7 @@ class LoanCollateralTypeResource extends Resource
 
     protected static ?string $navigationGroup = 'Loans Management';
     protected static ?int $navigationSort = 5;
+    protected static ?string $cluster = Configuration::class;
 
     public static function form(Form $form): Form
     {

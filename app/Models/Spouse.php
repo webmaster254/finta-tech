@@ -18,8 +18,10 @@ class Spouse extends Model
         'mobile',
         'email',
         'occupation',
-        'address',
-        'relationship',
+        'id_number',
+        'photo',
+        'consent_signature',
+        
         'consent_form'
     ];
 

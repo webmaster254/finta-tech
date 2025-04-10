@@ -107,15 +107,10 @@ class AdminPanelProvider extends PanelProvider
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->maxContentWidth(MaxWidth::Full)
             ->navigationItems([
-                NavigationItem::make('Analytics')
-                    ->url('https://filament.pirsch.io', shouldOpenInNewTab: true)
-                    ->icon('heroicon-o-presentation-chart-line')
-                    ->group('Reports')
-                    ->sort(3),
-                NavigationItem::make('dashboard')
-                    ->label('customer 360 view')
-                    ->url(fn (): string => ClientResource::getUrl())
-                    ->icon('heroicon-o-user-group')
+                NavigationItem::make('clients')
+                    ->label('Maintenance')
+                    ->url(fn (): string => ClientResource::getUrl('create'))
+                    ->group('Clients Management')
                     ->sort(1),
                 // ...
             ])

@@ -2,16 +2,17 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\ClientRelationshipResource\Pages;
-use App\Filament\Resources\ClientRelationshipResource\RelationManagers;
-use App\Models\ClientRelationship;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use App\Models\ClientRelationship;
+use App\Filament\Clusters\Configuration;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Resources\ClientRelationshipResource\Pages;
+use App\Filament\Resources\ClientRelationshipResource\RelationManagers;
 
 class ClientRelationshipResource extends Resource
 {
@@ -20,6 +21,7 @@ class ClientRelationshipResource extends Resource
     protected static ?string $navigationIcon = null;
     protected static ?string $navigationGroup = 'Clients Management';
     protected static ?int $navigationSort = 3;
+    protected static ?string $cluster = Configuration::class;
 
 
 

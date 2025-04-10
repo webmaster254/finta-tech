@@ -15,6 +15,7 @@ use App\Models\Loan\LoanChargeOption;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\LoanChargeResource\Pages;
+use App\Filament\Clusters\Configuration;
 use App\Filament\Resources\LoanChargeResource\RelationManagers;
 
 class LoanChargeResource extends Resource
@@ -24,6 +25,8 @@ class LoanChargeResource extends Resource
     protected static ?string $navigationIcon = null;
     protected static ?string $navigationGroup = 'Loans Management';
     protected static ?int $navigationSort = 4;
+    protected static ?string $cluster = Configuration::class;
+   
 
     public static function form(Form $form): Form
     {

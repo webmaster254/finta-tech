@@ -16,7 +16,7 @@ return new class extends Migration
     {
         Schema::create('client_next_of_kins', function (Blueprint $table) {$table->bigIncrements('id');
             $table->foreignId('created_by_id')->constrained('users');
-            $table->foreignIdFor(Client::class)->constrained()->onUpdate('cascade')->onDelete('cascade');
+            $table->foreignId('client_id')->constrained()->onUpdate('cascade')->onDelete('cascade')->nullable();
             $table->foreignIdFor(ClientRelationship::class)->constrained()->onUpdate('cascade')->onDelete('cascade');
             $table->string('first_name')->nullable();
             $table->string('middle_name')->nullable();

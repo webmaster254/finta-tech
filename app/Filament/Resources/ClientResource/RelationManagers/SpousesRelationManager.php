@@ -57,10 +57,11 @@ class SpousesRelationManager extends RelationManager
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('relationship'),
+                Tables\Columns\TextColumn::make('id_number'),
                 Tables\Columns\TextColumn::make('mobile'),
                 Tables\Columns\TextColumn::make('email'),
-                Tables\Columns\TextColumn::make('occupation'),
+                Tables\Columns\ImageColumn::make('photo')
+                   ->size(40),
             ])
             ->filters([
                 //

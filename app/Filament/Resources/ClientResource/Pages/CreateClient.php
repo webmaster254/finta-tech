@@ -13,7 +13,7 @@ use App\Filament\Resources\ClientResource\RelationManagers\LoansRelationManager;
 
 class CreateClient extends CreateRecord
 {
-    //use CreateRecord\Concerns\HasWizard;
+    use CreateRecord\Concerns\HasWizard;
     //use Draftable;
     protected static string $resource = ClientResource::class;
 
@@ -27,42 +27,42 @@ class CreateClient extends CreateRecord
         return 'Client Created successfully';
     }
  
-    // protected function getSteps(): array
-    // {
-    //     return [
-    //         Step::make('Personal Details')
-    //             ->schema(ClientResource::getPersonalInformation())
-    //             ->afterValidation(function (Step $component) {
-    //                 // Get the validated data from the component
-    //                 $validated = $component->getChildComponentContainer()->validate();
+    protected function getSteps(): array
+    {
+        return [
+            Step::make('Personal Details')
+                ->schema(ClientResource::getPersonalInformation())
+                ->afterValidation(function (Step $component) {
+                    // Get the validated data from the component
+                    $validated = $component->getChildComponentContainer()->validate();
                     
                     
-    //                 // Extract the mobile number from the validated data
-    //                 if (isset($validated['data']['mobile']) && !empty($validated['data']['mobile'])) {
-    //                     // Hash the mobile number using SHA-256
-    //                     $hashedMobile = hash('sha256', $validated['data']['mobile']);
+                    // Extract the mobile number from the validated data
+                    if (isset($validated['data']['mobile']) && !empty($validated['data']['mobile'])) {
+                        // Hash the mobile number using SHA-256
+                        $hashedMobile = hash('sha256', $validated['data']['mobile']);
                         
-    //                     // Set the account_number field with the hashed value
-    //                     $this->data['account_number'] = $hashedMobile;
-    //                     //dd($this->data);  
-    //                 }
-    //             }),
-    //         Step::make('Address Details')
-    //             ->schema(ClientResource::getAddressInformation()),
-    //         Step::make('Next of Kin Details')
-    //             ->schema(ClientResource::getNextOfKinInformation()),
-    //         Step::make('Spouse Details')
-    //             ->schema(ClientResource::getSpouseInformation()),
-    //         Step::make('Referees Details')
-    //             ->schema(ClientResource::getRefereesInformation()),
-    //         Step::make('Client Lead')
-    //             ->schema(ClientResource::getClientLead()),
-    //         Step::make('Admin Details')
-    //             ->schema(ClientResource::getAdminInformation()),
-    //         // Step::make('Summary')
-    //         //     ->schema(ClientResource::getClientDetailsSummary()),
-    //     ];
-    // }
+                        // Set the account_number field with the hashed value
+                        $this->data['account_number'] = $hashedMobile;
+                        //dd($this->data);  
+                    }
+                }),
+            Step::make('Address Details')
+                ->schema(ClientResource::getAddressInformation()),
+            // Step::make('Next of Kin Details')
+            //     ->schema(ClientResource::getNextOfKinInformation()),
+            // Step::make('Spouse Details')
+            //     ->schema(ClientResource::getSpouseInformation()),
+            // Step::make('Referees Details')
+            //     ->schema(ClientResource::getRefereesInformation()),
+            // Step::make('Client Lead')
+            //     ->schema(ClientResource::getClientLead()),
+            // Step::make('Admin Details')
+            //     ->schema(ClientResource::getAdminInformation()),
+            // Step::make('Summary')
+            //     ->schema(ClientResource::getClientDetailsSummary()),
+        ];
+    }
 
    
 }

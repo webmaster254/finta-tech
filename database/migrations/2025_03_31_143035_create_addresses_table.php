@@ -28,7 +28,7 @@ return new class extends Migration
             $table->string('floor_no')->nullable();
             $table->string('house_no')->nullable();
             $table->string('estate')->nullable();
-            $table->unsignedBigInteger('image')->nullable();
+            $table->string('image')->nullable();
             $table->string('image_description')->nullable();
             $table->timestamps();
         });

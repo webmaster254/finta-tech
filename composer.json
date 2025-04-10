@@ -52,6 +52,7 @@
         "outerweb/filament-settings": "^1.1",
         "outerweb/settings": "^1.0",
         "parfaitementweb/filament-country-field": "^2.4",
+        "pboivin/filament-peek": "^2.0",
         "phpseclib/phpseclib": "~3.0",
         "rappasoft/laravel-authentication-log": "^3.0",
         "rupadana/filament-api-service": "^3.2",

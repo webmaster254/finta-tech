@@ -13,14 +13,15 @@ return new class extends Migration
     {
         Schema::create('spouses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('client_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('client_id')->constrained()->cascadeOnDelete()->nullable();
             $table->string('name')->nullable();
             $table->string('mobile')->nullable();
             $table->string('email')->nullable();
             $table->string('occupation')->nullable();
-            $table->string('address')->nullable();
-            $table->string('relationship')->nullable();
+            $table->string('id_number')->nullable();
+            $table->string('photo')->nullable();
             $table->string('consent_form')->nullable();
+            $table->string('consent_signature')->nullable();
             $table->timestamps();
         });
     }

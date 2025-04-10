@@ -36,8 +36,10 @@ use Filament\Resources\Resource;
 use Awcodes\Curator\Models\Media;
 use Awcodes\TableRepeater\Header;
 use Dotswan\MapPicker\Fields\Map;
+use App\Models\ClientRelationship;
 use Filament\Resources\Pages\Page;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\HtmlString;
 use Filament\Forms\Components\Card;
 use Illuminate\Support\Facades\URL;
 use Filament\Support\Enums\MaxWidth;
@@ -62,6 +64,7 @@ use Filament\Notifications\Notification;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Pages\SubNavigationPosition;
 use Filament\Tables\Actions\ExportAction;
 use Filament\Tables\Actions\ImportAction;
@@ -72,10 +75,10 @@ use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Illuminate\Database\Eloquent\Collection;
 use Filament\Tables\Actions\ExportBulkAction;
+
 use App\Filament\Resources\ClientResource\Pages;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 use Filament\Infolists\Components\Actions\Action;
-
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Tables\Actions\Action as TableAction;
 use Ysfkaya\FilamentPhoneInput\Tables\PhoneColumn;
@@ -111,9 +114,8 @@ class ClientResource extends Resource implements HasShieldPermissions
 {
     protected static ?string $model = Client::class;
 
-    //protected static ?string $navigationIcon = 'heroicon-o-user-group';
-    protected static ?string $navigationLabel = 'Maintenance';
-    protected static ?string $navigationGroup = 'Clients Management';
+    protected static ?string $navigationIcon = 'heroicon-o-user-group';
+    protected static ?string $navigationLabel = 'Customer 360 view';
     protected static ?int $navigationSort = 0;
     protected static ?string $recordTitleAttribute = 'fullname';
     protected static SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Top;
@@ -124,143 +126,174 @@ class ClientResource extends Resource implements HasShieldPermissions
     return static::getModel()::where('status', 'pending')->count();
 }
 
+// public static function form(Form $form): Form
+// {
+//     return $form
+//         ->schema([
+//             Forms\Components\Hidden::make('suggested_loan_limit')
+//             ->default(10000),
+//         Forms\Components\Hidden::make('account_number'),
+//         Forms\Components\Select::make('client_type_id')
+//             ->label('Client Type')
+//             ->options(ClientType::all()->pluck('name', 'id'))
+//             ->required(),
+//         Forms\Components\Select::make('title_id')
+//             ->relationship('title','name'),
+//         Forms\Components\TextInput::make('first_name')
+//             ->required()
+//             ->maxLength(255),
+//         Forms\Components\TextInput::make('middle_name')
+//             ->maxLength(255),
+//         Forms\Components\TextInput::make('last_name')
+//             ->required()
+//             ->maxLength(255),
+//         Forms\Components\TextInput::make('aka')
+//             ->label('AKA')
+//             ->maxLength(50),
+//         Forms\Components\Select::make('id_type')
+//             ->label('ID Type')
+//             ->required()
+//             ->options(IDType::class),
+//         Forms\Components\TextInput::make('id_number')
+//             ->label('ID Number')
+//             ->numeric()
+//             ->required()
+//             ->unique(ignoreRecord: true)
+//             ->minLength(6)
+//             ->maxLength(8),
+//         Forms\Components\select::make('gender')
+//             ->required()
+//             ->options(Gender::class),
+//         Forms\Components\Hidden::make('status')
+//             ->default('pending'),
+//         Forms\Components\Select::make('marital_status')
+//             ->options(MaritalStatus::class),
+//         Forms\Components\select::make('education_level')
+//             ->label('Education Level')
+//             ->required()
+//             ->options(EducationLevel::class),
+//         Forms\Components\select::make('profession_id')
+//             ->label('Profession')
+//             ->required()
+//             ->options(Profession::all()->pluck('name', 'id')),
+
+//         FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('mobile')
+//             ->label('Mobile')
+//             ->region('KE')
+//             ->displayFormat(PhoneNumberFormat::E164)
+//             ->databaseFormat(PhoneNumberFormat::INTERNATIONAL)
+//             ->mask('9999999999')
+//             ->required(),
+//         FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('other_mobile_no')
+//             ->label('Other Mobile')
+//             ->region('KE')
+//             ->displayFormat(PhoneNumberFormat::E164)
+//             ->databaseFormat(PhoneNumberFormat::INTERNATIONAL)
+//             ->mask('9999999999'),
+//         Forms\Components\TextInput::make('email')
+//             ->label('Email')
+//             ->email()
+//             ->maxLength(50),
+//         Forms\Components\TextInput::make('kra_pin')
+//             ->label('KRA PIN')
+//             ->maxLength(25),
+//         Forms\Components\DatePicker::make('dob')
+//             ->label('Date of Birth')
+//             ->required(),
+//         Forms\Components\Select::make('source_of_income')
+//             ->options(SourceOfIncome::class),
+//         Forms\Components\Select::make('type_of_tech')
+//             ->required()
+//             ->label('Type of Technology')
+//             ->options(TypeOfTech::class),
+//         Forms\Components\Select::make('loan_officer_id')
+//             ->label('Relationship Officer')
+//             ->relationship('loan_officer','name',
+//                 modifyQueryUsing:  function (Builder $query) {
+//                     $tenantModel = Filament::getTenant();
+//                     $query->whereHas('branches', function (Builder $query) use ($tenantModel) {
+//                         $query->whereHas('users', function (Builder $query) use ($tenantModel) {
+//                             $query->where('branch_id', $tenantModel->id);
+//                         });
+//                     });
+//                 })
+//                 ->preload()
+//             ->required(),
+//         CuratorPicker::make('photo')
+//             ->label('Avatar')
+//             ->buttonLabel('Upload Avatar')
+//             ->size('sm')
+//             ->imageResizeTargetWidth('200')
+//             ->imageResizeTargetHeight('200'),
+//         CuratorPicker::make('id_front')
+//             ->label('ID Front')
+//             ->buttonLabel('Upload ID Front')
+//             ->size('sm')
+//             ->imageResizeTargetWidth('200')
+//             ->imageResizeTargetHeight('200')
+//             ->required()
+//             ,
+//         CuratorPicker::make('id_back')
+//             ->label('ID Back')
+//             ->buttonLabel('Upload ID Back')
+//             ->size('sm')
+//             ->imageResizeTargetWidth('200')
+//             ->imageResizeTargetHeight('200')
+//             ->required(),
+//             Forms\Components\TextInput::make('notes')
+//             ->label('Notes')
+//             ->maxLength(255),
+//         SignaturePad::make('signature')
+//              ->dotSize(2.0)
+//             ->lineMinWidth(0.5)
+//             ->lineMaxWidth(2.5)
+//             ->backgroundColor('rgba(0,0,0,0)')  // Background color on light mode
+//             ->backgroundColorOnDark('#f0a')
+//             ->penColor('#000')
+//             ->penColorOnDark('#fff') 
+//             ->throttle(16)
+//             ->minDistance(5)
+//             ->velocityFilterWeight(0.7) 
+//              ->downloadable()                    // Allow download of the signature (defaults to false)
+//             ->downloadableFormats([             // Available formats for download (defaults to all)
+//                 DownloadableFormat::PNG,
+//                 DownloadableFormat::JPG,
+//                 DownloadableFormat::SVG,
+//             ]),
+//         ]);
+// }
+
+
 public static function form(Form $form): Form
 {
     return $form
         ->schema([
-            Forms\Components\Hidden::make('suggested_loan_limit')
-            ->default(10000),
-        Forms\Components\Hidden::make('account_number'),
-        Forms\Components\Select::make('client_type_id')
-            ->label('Client Type')
-            ->options(ClientType::all()->pluck('name', 'id'))
-            ->required(),
-        Forms\Components\Select::make('title_id')
-            ->relationship('title','name'),
-        Forms\Components\TextInput::make('first_name')
-            ->required()
-            ->maxLength(255),
-        Forms\Components\TextInput::make('middle_name')
-            ->maxLength(255),
-        Forms\Components\TextInput::make('last_name')
-            ->required()
-            ->maxLength(255),
-        Forms\Components\TextInput::make('aka')
-            ->label('AKA')
-            ->maxLength(50),
-        Forms\Components\Select::make('id_type')
-            ->label('ID Type')
-            ->required()
-            ->options(IDType::class),
-        Forms\Components\TextInput::make('id_number')
-            ->label('ID Number')
-            ->numeric()
-            ->required()
-            ->unique(ignoreRecord: true)
-            ->minValue(6)
-            ->maxValue(8),
-        Forms\Components\select::make('gender')
-            ->required()
-            ->options(Gender::class),
-        Forms\Components\Hidden::make('status')
-            ->default('pending'),
-        Forms\Components\Select::make('marital_status')
-            ->options(MaritalStatus::class),
-        Forms\Components\select::make('education_level')
-            ->label('Education Level')
-            ->required()
-            ->options(EducationLevel::class),
-        Forms\Components\select::make('profession_id')
-            ->label('Profession')
-            ->required()
-            ->options(Profession::all()->pluck('name', 'id')),
-
-        FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('mobile')
-            ->label('Mobile')
-            ->region('KE')
-            ->displayFormat(PhoneNumberFormat::E164)
-            ->databaseFormat(PhoneNumberFormat::INTERNATIONAL)
-            ->mask('9999999999')
-            ->required(),
-        FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('other_mobile_no')
-            ->label('Other Mobile')
-            ->region('KE')
-            ->displayFormat(PhoneNumberFormat::E164)
-            ->databaseFormat(PhoneNumberFormat::INTERNATIONAL)
-            ->mask('9999999999'),
-        Forms\Components\TextInput::make('email')
-            ->label('Email')
-            ->email()
-            ->maxLength(50),
-        Forms\Components\TextInput::make('kra_pin')
-            ->label('KRA PIN')
-            ->maxLength(25),
-        Forms\Components\DatePicker::make('dob')
-            ->label('Date of Birth')
-            ->required(),
-        Forms\Components\Select::make('source_of_income')
-            ->options(SourceOfIncome::class),
-        Forms\Components\Select::make('type_of_tech')
-            ->required()
-            ->label('Type of Technology')
-            ->options(TypeOfTech::class),
-        Forms\Components\Select::make('loan_officer_id')
-            ->label('Relationship Officer')
-            ->relationship('loan_officer','name',
-                modifyQueryUsing:  function (Builder $query) {
-                    $tenantModel = Filament::getTenant();
-                    $query->whereHas('branches', function (Builder $query) use ($tenantModel) {
-                        $query->whereHas('users', function (Builder $query) use ($tenantModel) {
-                            $query->where('branch_id', $tenantModel->id);
-                        });
-                    });
-                })
-                ->preload()
-            ->required(),
-        CuratorPicker::make('photo')
-            ->label('Avatar')
-            ->buttonLabel('Upload Avatar')
-            ->size('sm')
-            ->imageResizeTargetWidth('200')
-            ->imageResizeTargetHeight('200'),
-        CuratorPicker::make('id_front')
-            ->label('ID Front')
-            ->buttonLabel('Upload ID Front')
-            ->size('sm')
-            ->imageResizeTargetWidth('200')
-            ->imageResizeTargetHeight('200')
-            ->required()
-            ,
-        CuratorPicker::make('id_back')
-            ->label('ID Back')
-            ->buttonLabel('Upload ID Back')
-            ->size('sm')
-            ->imageResizeTargetWidth('200')
-            ->imageResizeTargetHeight('200')
-            ->required(),
-            Forms\Components\TextInput::make('notes')
-            ->label('Notes')
-            ->maxLength(255),
-        SignaturePad::make('signature')
-             ->dotSize(2.0)
-            ->lineMinWidth(0.5)
-            ->lineMaxWidth(2.5)
-            ->backgroundColor('rgba(0,0,0,0)')  // Background color on light mode
-            ->backgroundColorOnDark('#f0a')
-            ->penColor('#000')
-            ->penColorOnDark('#fff') 
-            ->throttle(16)
-            ->minDistance(5)
-            ->velocityFilterWeight(0.7) 
-             ->downloadable()                    // Allow download of the signature (defaults to false)
-            ->downloadableFormats([             // Available formats for download (defaults to all)
-                DownloadableFormat::PNG,
-                DownloadableFormat::JPG,
-                DownloadableFormat::SVG,
-            ]),
+            Wizard::make()
+                ->schema([
+                    Wizard\Step::make('Personal Information')
+                         ->description('Enter client personal information')
+                        ->schema(self::getPersonalInformation()),
+                    Wizard\Step::make('Address Information')
+                        ->description('Enter client address information')
+                        ->schema(self::getAddressInformation()),
+                    Wizard\Step::make('Next of Kin Information')
+                        ->description('Enter client next of kin information')
+                        ->schema(self::getNextOfKinInformation()),
+                    Wizard\Step::make('Spouse Information')
+                        ->description('Enter client spouse information')
+                        ->schema(self::getSpouseInformation()),
+                    Wizard\Step::make('Referees Information')
+                        ->description('Enter client referees information')
+                        ->schema(self::getRefereesInformation()),
+                    Wizard\Step::make('Client Lead')
+                        ->description('Enter client lead information')
+                        ->schema(self::getClientLead()),
+                    Wizard\Step::make('Admin Information')
+                        ->description('Enter client admin information')
+                        ->schema(self::getAdminInformation()),
+                ])
         ]);
-}
-
+    }
 
     public static function table(Table $table): Table
     {
@@ -665,7 +698,8 @@ public static function form(Form $form): Form
                     ->numeric()
                     ->required()
                     ->unique(ignoreRecord: true)
-                    ->maxLength(255),
+                    ->minLength(6)
+                    ->maxLength(8),
                 Forms\Components\select::make('gender')
                     ->required()
                     ->options(Gender::class),
@@ -701,9 +735,6 @@ public static function form(Form $form): Form
                 Forms\Components\TextInput::make('kra_pin')
                     ->label('KRA PIN')
                     ->maxLength(25),
-                Forms\Components\TextInput::make('postal_code')
-                    ->label('Postal Code')
-                    ->maxLength(25),
                 Forms\Components\DatePicker::make('dob')
                     ->label('Date of Birth')
                     ->required(),
@@ -715,27 +746,64 @@ public static function form(Form $form): Form
                     ->options(TypeOfTech::class),
                 CuratorPicker::make('photo')
                     ->label('Avatar')
-                    ,
-                CuratorPicker::make('signature')
-                    ->label('Signature')
-                    ->required()
-                    ,
-                CuratorPicker::make('id_front')
+                    ->buttonLabel('Upload Avatar')
+                    ->size('sm')
+                    ->imageResizeTargetWidth('200')
+                    ->imageResizeTargetHeight('200'),
+                FileUpload::make('id_front')
                     ->label('ID Front')
-                    ->required()
-                    ,
-                CuratorPicker::make('id_back')
-                    ->label('ID Back')
+                    ->image()
+                    ->imageEditor()
+                    ->imagePreviewHeight('250')
+                    ->loadingIndicatorPosition('left')
+                    ->panelAspectRatio('2:1')
+                    ->panelLayout('integrated')
+                    ->removeUploadedFileButtonPosition('right')
+                    ->uploadButtonPosition('left')
+                    ->uploadProgressIndicatorPosition('left')
                     ->required(),
-                    
-                    ])->columns(3),
-                ];
+                FileUpload::make('id_back')
+                    ->label('ID Back')
+                    ->image()
+                    ->imageEditor()
+                    ->imagePreviewHeight('250')
+                    ->loadingIndicatorPosition('left')
+                    ->panelAspectRatio('2:1')
+                    ->panelLayout('integrated')
+                    ->removeUploadedFileButtonPosition('right')
+                    ->uploadButtonPosition('left')
+                    ->uploadProgressIndicatorPosition('left')
+                    ->required(),
+                SignaturePad::make('signature')
+                    ->dotSize(2.0)
+                   ->lineMinWidth(0.5)
+                   ->backgroundColor('rgba(0,0,0,0)')  // Background color on light mode
+                   ->backgroundColorOnDark('#f0a')
+                   ->penColor('#0000FF')
+                   ->penColorOnDark('#fff') 
+                   ->lineMaxWidth(2.5)
+                   ->throttle(16)
+                   ->minDistance(5)
+                   ->required()
+                   ->velocityFilterWeight(0.7) 
+                    ->downloadable()                    // Allow download of the signature (defaults to false)
+                   ->downloadableFormats([             // Available formats for download (defaults to all)
+                       DownloadableFormat::PNG,
+                       DownloadableFormat::JPG,
+                       DownloadableFormat::SVG,
+                   ]),
+                Forms\Components\Textarea::make('notes')
+                    ->label('Notes')
+                    ->maxLength(255),
+                ]),
+            ];
     }
 
     public static function getAddressInformation(): array
     {
         return [
             Repeater::make('addresses')
+            ->relationship('addresses')
             ->columns(3)
             ->addActionLabel('Add Address')
             ->label('Addresses')
@@ -815,9 +883,18 @@ public static function form(Form $form): Form
             ->readOnly(),
             Forms\Components\TextInput::make('longitude')
             ->readOnly(),
-            CuratorPicker::make('image')
+            FileUpload::make('image')
                 ->label('Image')
-                ->required(),  
+                ->image()
+                ->imageEditor()
+                ->imagePreviewHeight('250')
+                ->loadingIndicatorPosition('left')
+                ->panelAspectRatio('2:1')
+                ->panelLayout('integrated')
+                ->removeUploadedFileButtonPosition('right')
+                ->uploadButtonPosition('left')
+                ->uploadProgressIndicatorPosition('left')
+                ->required(),
             Forms\Components\Textarea::make('image_description')
                 ->maxLength(20),    
                  ]),
@@ -828,30 +905,37 @@ public static function form(Form $form): Form
     {
         return [
             Repeater::make('next_of_kins')
+            ->relationship('next_of_kins')
+            ->label('Next of Kin')
             ->addActionLabel('Add Next of Kin')
             ->columns(3)
                 ->schema([
-                    Forms\Components\TextInput::make('name')
-                    ->label('Full Name')
+                    Forms\Components\Hidden::make('created_by_id')
+                    ->default(Auth::user()->id),
+                    Forms\Components\TextInput::make('first_name')
+                    ->label('First Name')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(25),
+                    Forms\Components\TextInput::make('middle_name')
+                    ->label('Middle Name')
+                    ->maxLength(25),
+                    Forms\Components\TextInput::make('last_name')
+                    ->label('Last Name')
+                    ->required()
+                    ->maxLength(25),
                 FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('mobile')
                     ->label('Mobile')
-                    ->region('KE')
+                    ->region('KE')  
                     ->displayFormat(PhoneNumberFormat::E164)
                     ->mask('9999999999')
                     ->required()
                     ->maxLength(20),
-                Forms\Components\Select::make('relationship')
+                    Forms\Components\Select::make('client_relationship_id')
                     ->label('Relationship')
-                    ->options([
-                        'spouse' => 'Spouse',
-                        'parent' => 'Parent',
-                        'child' => 'Child',
-                        'sibling' => 'Sibling',
-                        'friend' => 'Friend',
-                        'other' => 'Other'
-                    ])
+                   ->options(ClientRelationship::all()->pluck('name', 'id'))
+                    ->required(),
+                    Forms\Components\TextInput::make('address')
+                    ->maxLength(255)
                     ->required(),
                 ])
            
@@ -862,28 +946,78 @@ public static function form(Form $form): Form
     {
         return [
             Card::make()
+            ->relationship('spouse')
             ->schema([  
-                Forms\Components\TextInput::make('spouce_name')
+                Forms\Components\TextInput::make('name')
                 ->label('Spouse Name')
                 ->required()
                 ->maxLength(255),
-                Forms\Components\TextInput::make('spouce_id')
+                Forms\Components\TextInput::make('id_number')
                 ->label('Spouse ID Number')
+                ->live()
                 ->required()
-                ->maxLength(50),
-            FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('spouce_mobile')
+                ->minLength(6)
+                ->maxLength(8),
+            FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('mobile')
                 ->label('Spouse Mobile')
                 ->region('KE')
                 ->displayFormat(PhoneNumberFormat::E164)
                 ->mask('9999999999')
                 ->required()
                 ->maxLength(20),
-            Forms\Components\TextInput::make('spouce_occupation')
+            Forms\Components\TextInput::make('occupation')
                 ->label('Spouse Occupation')
                 ->maxLength(100),
-                CuratorPicker::make('consent_form')
-                ->label('Consent Form')
+            Forms\Components\FileUpload::make('photo')
+                ->label('Photo')
+                ->image()
+                ->imageEditor()
+                ->imagePreviewHeight('250')
+                ->loadingIndicatorPosition('left')
+                ->panelAspectRatio('2:1')
+                ->panelLayout('integrated')
+                ->removeUploadedFileButtonPosition('right')
+                ->uploadButtonPosition('left')
+                ->uploadProgressIndicatorPosition('left')
                 ->required(),
+            Forms\Components\Placeholder::make('consent_declaration')
+                ->label('STATUTORY DECLARATION BY SPOUSE/LIVE IN COMPANION')
+                ->columnSpanFull()
+                ->content(''),
+            Forms\Components\Placeholder::make('consent_notes')
+                ->label(fn(Get $get) => new HtmlString('<p>1. That I am the holder of National Identity Card No <a class="underline" style="color:#0000FF">' . $get('id_number') . '</a></p>
+                <p>2. That being the spouse/ live in companion of the Borrower hereby acknowledge and declare that I
+                have full knowledge of this borrowing.</p>
+                <p>3. That I understand the nature and effect of the borrowing, neither the Borrower nor the Lender have
+                used any compulsion or threat or exercised undue influence on me to induce me to execute this 
+                consent.</p>
+                <p>4. That I acknowledge that I have been advised to take and have taken independent legal advice
+                regarding the nature of this commercial transaction.</p>
+                <p>5. That I HEREBY CONSENT TO THE SAME on the terms herein appearing and the creation of
+                applicable security.</p>
+                <p style="margin-bottom: 15px;">6. That I make this solemn declaration, conscientiously believing the same to be true and in accordance
+                with the Oaths and Statutory Declarations Act.</p>
+                <p style="margin-bottom: 15px; color:#0000FF">DECLARED on ' . Carbon::now()->toFormattedDateString() . '</p>'))
+                ->columnSpanFull()
+                ->content(''),
+            SignaturePad::make('consent_signature')
+                ->label('Consent Signature')
+                ->dotSize(2.0)
+                ->lineMinWidth(0.5)
+                ->backgroundColor('rgba(0,0,0,0)')  // Background color on light mode
+                ->backgroundColorOnDark('#f0a')
+                ->penColor('#0000FF')
+                ->penColorOnDark('#fff') 
+                ->lineMaxWidth(2.5)
+                ->throttle(16)
+                ->minDistance(5)
+                ->velocityFilterWeight(0.7) 
+                ->downloadable()                    // Allow download of the signature (defaults to false)
+                ->downloadableFormats([             // Available formats for download (defaults to all)
+                    DownloadableFormat::PNG,
+                    DownloadableFormat::JPG,
+                    DownloadableFormat::SVG,
+                ]),
             ])
             ->columns(3),
         ];
@@ -894,23 +1028,23 @@ public static function form(Form $form): Form
         return [
             Repeater::make('referees')
             ->addActionLabel('Add Referees')
+            ->relationship('referees')
                 ->schema([
-                        Forms\Components\TextInput::make('referee_name')
+                        Forms\Components\TextInput::make('name')
                         ->label('Referee Name')
                         ->maxLength(255),
-                    FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('referee_mobile')
+                    FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('mobile')
                         ->label('Referee Mobile')
                         ->region('KE')
                         ->displayFormat(PhoneNumberFormat::E164)
                         ->mask('9999999999')
                         ->required(),
-                    Forms\Components\Select::make('referee_relationship')
+                        Forms\Components\Select::make('relationship')
                         ->label('Relationship')
                         ->options(Relationship::class)
                         ->required(),
                 ])
                 ->columns(3)
-                
                 ->minItems(3)
                 ->maxItems(5),
         ];
@@ -965,9 +1099,6 @@ public static function form(Form $form): Form
                 ->required(),
                 Forms\Components\Checkbox::make('referees_contacted')
                 ->label('Client Referees Contacted?')
-                ->required(),
-                CuratorPicker::make('reg_form')
-                ->label('Registration Form')
                 ->required(),
                 Forms\Components\Select::make('loan_officer_id')
                 ->label('Relationship Officer')
@@ -1055,10 +1186,10 @@ public static function form(Form $form): Form
                         ->content(fn (Forms\Get $get): ?string => $get('type_of_tech')),
                     
                     ])->headerActions([
-                        Forms\Components\Actions\Action::make('edit')
-                        ->alpineClickHandler("step = 'Personal Details'")
-                        ->icon('heroicon-o-pencil')
-                        ->label('Edit'),
+                        // Forms\Components\Actions\Action::make('edit')
+                        // ->alpineClickHandler("step = 'Personal Details'")
+                        // ->icon('heroicon-o-pencil')
+                        // ->label('Edit'),
                         
                     ])->compact(),
 
@@ -1151,12 +1282,49 @@ public static function form(Form $form): Form
                             return is_array($addresses) && !empty($addresses[0]['estate']) ? $addresses[0]['estate'] : null;
                         }),
                         ])->headerActions([
-                            Forms\Components\Actions\Action::make('edit')
-                            ->alpineClickHandler("step = 'Address Details'")
-                            ->icon('heroicon-o-pencil')
-                            ->label('Edit'),
+                            Action::make('preview')
+                                    ->label('Preview data')
+                                    ->icon('heroicon-o-eye')
+                                    ->modalContent(function (Forms\Get $get) {
+                                         $data = $get('data');
+                                        return view('application.preview', [
+                                            'application' => $record,
+                                            'isPreview' => true
+                                        ]);
+                                    })
+                                    ->modalWidth('7xl')
                         ])->compact(),
-               
+                
+            Forms\Components\Card::make('Next of Kin Details')
+                ->columns(3)
+                ->schema([
+                    Forms\Components\Placeholder::make('next_of_kin_name')
+                        ->label('Next of Kin Name')
+                        ->content(function (Forms\Get $get): ?string {
+                            dd($get('next_of_kins'));
+                            $nextOfKins = $get('next_of_kins');
+                            return is_array($nextOfKins) && !empty($nextOfKins[0]['name']) ? $nextOfKins[0]['name'] : null;
+                        }),
+                    Forms\Components\Placeholder::make('next_of_kin_relationship')
+                        ->label('Next of Kin Relationship')
+                        ->content(function (Forms\Get $get): ?string {
+                            $nextOfKins = $get('next_of_kins');
+                            return is_array($nextOfKins) && !empty($nextOfKins[0]['relationship']) ? $nextOfKins[0]['relationship'] : null;
+                        }),
+                    Forms\Components\Placeholder::make('next_of_kin_mobile')
+                        ->label('Next of Kin Mobile')
+                        ->content(function (Forms\Get $get): ?string {
+                            $nextOfKins = $get('next_of_kins');
+                            return is_array($nextOfKins) && !empty($nextOfKins[0]['mobile']) ? $nextOfKins[0]['mobile'] : null;
+                        }),
+                ])
+                ->headerActions([
+                    // Forms\Components\Actions\Action::make('edit')
+                    // ->alpineClickHandler("step = 'Next of Kin Details'")
+                    // ->icon('heroicon-o-pencil')
+                    // ->label('Edit'),
+                ])
+                ->compact(),
             
         ];
     }
@@ -1190,14 +1358,14 @@ public static function form(Form $form): Form
     }
 
 
-    public static function getRecordSubNavigation(Page $page): array
-{
-    return $page->generateNavigationItems([
-        Pages\ViewClient::class,
-        Pages\EditClient::class,
-        Pages\ManageEmploymentInfo::class,
-    ]);
-}
+//     public static function getRecordSubNavigation(Page $page): array
+// {
+//     return $page->generateNavigationItems([
+//         Pages\ViewClient::class,
+//         Pages\EditClient::class,
+//         Pages\ManageEmploymentInfo::class,
+//     ]);
+// }
 
     public static function getGlobalSearchResultUrl(Model $record): string
     {

@@ -86,6 +86,10 @@ class ApproveClient extends Page implements HasTable
                         'source_of_income' => $record->source_of_income,
                         'type_of_tech' => $record->type_of_tech,
                         'loan_officer' => $record->loan_officer->full_name,
+                        'signature' => $record->signature,
+                        'id_front' => $record->id_front,
+                        'id_back' => $record->id_back,
+                        'loan_officer_id' => $record->loan_officer->full_name,
                         'addresses' => $record->addresses && $record->addresses->count() > 0 ? $record->addresses->map(function($address) {
                             // Load the address with its relationships if they're not already loaded
                             if (!$address->relationLoaded('county') || !$address->relationLoaded('subCounty') || !$address->relationLoaded('ward')) {
@@ -197,6 +201,15 @@ class ApproveClient extends Page implements HasTable
                                     ->disabled(),
                                 TextInput::make('type_of_tech')
                                     ->label('Type of Technology')
+                                    ->disabled(),
+                                TextInput::make('signature')
+                                    ->label('Signature')
+                                    ->disabled(),
+                                TextInput::make('id_front')
+                                    ->label('ID Front')
+                                    ->disabled(),
+                                TextInput::make('id_back')
+                                    ->label('ID Back')
                                     ->disabled(),
                             ])
                             ->columns(3),
@@ -370,7 +383,7 @@ class ApproveClient extends Page implements HasTable
                                 PdfViewerField::make('reg_form')
                                 ->label('Registration Form')
                                 ->required(),
-                                TextInput::make('loan_officer')
+                                TextInput::make('loan_officer_id')
                                 ->label('Relationship Officer')
                                 ->disabled(),
                             ]),

@@ -24,6 +24,7 @@ use Filament\Forms\Components\Section;
 use Filament\Tables\Actions\ActionGroup;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Infolists\Components\Fieldset;
+use App\Filament\Clusters\Configuration;
 use Filament\Infolists\Components\TextEntry;
 use App\Models\LoanTransactionProcessingStrategy;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -40,6 +41,7 @@ class LoanProductResource extends Resource
     protected static ?string $navigationGroup = 'Loans Management';
     protected static ?int $navigationSort = 3;
     protected static bool $isScopedToTenant = false;
+    protected static ?string $cluster = Configuration::class;
 
     public static function getNavigationBadge(): ?string
 {
