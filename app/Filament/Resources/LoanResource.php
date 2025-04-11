@@ -102,7 +102,7 @@ class LoanResource extends Resource implements HasShieldPermissions
     protected static ?string $model = Loan::class;
 
     protected static ?string $navigationIcon = null;
-    protected static ?string $navigationLabel = 'View Loans';
+    protected static ?string $navigationLabel = 'Loans Maintenance';
     protected static ?string $navigationGroup = 'Loans Management';
     protected static ?int $navigationSort = 1;
     protected static ?string $tenantOwnershipRelationshipName = 'branch';

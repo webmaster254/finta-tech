@@ -300,27 +300,27 @@ class BusinessRelationManager extends RelationManager
                     ->label('Business Name'),
                 Tables\Columns\TextColumn::make('current_stock')
                     ->label('Current Stock')
-                    ->prefix('KES')
+                    ->prefix('KES ')
                     ->numeric(),
                 Tables\Columns\TextColumn::make('cost_of_sales')
                     ->label('Cost of Sales')
-                    ->prefix('KES')
+                    ->prefix('KES ')
                     ->numeric(),
                 Tables\Columns\TextColumn::make('hs_total')
                     ->label('Household Expense Total')
-                    ->prefix('KES')
+                    ->prefix('KES ')
                     ->numeric(),
                 Tables\Columns\TextColumn::make('bs_total')
                     ->label('Business Expense Total')
-                    ->prefix('KES')
+                    ->prefix('KES ')
                     ->numeric(),
                 Tables\Columns\TextColumn::make('gross_profit')
                     ->label('Gross Profit')
-                    ->prefix('KES')
+                    ->prefix('KES ')
                     ->numeric(),
                 Tables\Columns\TextColumn::make('net_profit')
                     ->label('Net Profit')
-                    ->prefix('KES')
+                    ->prefix('KES ')
                     ->numeric(),
             ])
             ->filters([

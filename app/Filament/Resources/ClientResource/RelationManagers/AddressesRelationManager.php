@@ -15,6 +15,7 @@ use Filament\Infolists\Infolist;
 use Dotswan\MapPicker\Fields\Map;
 use Infolists\Components\TextEntry;
 use Dotswan\MapPicker\Infolists\MapEntry;
+use Filament\Forms\Components\FileUpload;
 use Illuminate\Database\Eloquent\Builder;
 use Awcodes\Curator\Components\Forms\CuratorPicker;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -22,6 +23,7 @@ use Awcodes\Curator\Components\Tables\CuratorColumn;
 use Awcodes\Curator\PathGenerators\DatePathGenerator;
 use Filament\Resources\RelationManagers\RelationManager;
 use Parfaitementweb\FilamentCountryField\Forms\Components\Country;
+use Parfaitementweb\FilamentCountryField\Tables\Columns\CountryColumn;
 
 class AddressesRelationManager extends RelationManager
 {
@@ -107,11 +109,18 @@ class AddressesRelationManager extends RelationManager
                 ->readOnly(),
                 Forms\Components\TextInput::make('longitude')
                 ->readOnly(),
-                CuratorPicker::make('image')
+                FileUpload::make('image')
                     ->label('Image')
-                    ->preserveFilenames()
-                    ->pathGenerator(DatePathGenerator::class)
-                    ->required(),  
+                    ->image()
+                    ->imageEditor()
+                    ->imagePreviewHeight('250')
+                    ->loadingIndicatorPosition('left')
+                    ->panelAspectRatio('2:1')
+                    ->panelLayout('integrated')
+                    ->removeUploadedFileButtonPosition('right')
+                    ->uploadButtonPosition('left')
+                    ->uploadProgressIndicatorPosition('left')
+                    ->required(), 
                 Forms\Components\Textarea::make('image_description')
                     ->maxLength(20),    
                 
@@ -125,8 +134,10 @@ class AddressesRelationManager extends RelationManager
             ->recordTitleAttribute('id')
             ->columns([
                 Tables\Columns\TextColumn::make('address_type'),
-                Tables\Columns\TextColumn::make('country'),
-                Tables\Columns\TextColumn::make('county'),
+                CountryColumn::make('country')->label('Country'),
+                Tables\Columns\TextColumn::make('county.name')->label('County'),
+                Tables\Columns\TextColumn::make('subCounty.name')->label('Sub County'),
+                Tables\Columns\TextColumn::make('ward.name')->label('Ward'),
                 Tables\Columns\TextColumn::make('street'),
                 Tables\Columns\TextColumn::make('village'),
                 Tables\Columns\TextColumn::make('landmark'),
@@ -136,7 +147,7 @@ class AddressesRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('estate'),
                 Tables\Columns\TextColumn::make('latitude'),
                 Tables\Columns\TextColumn::make('longitude'),
-                CuratorColumn::make('image'),
+                Tables\Columns\ImageColumn::make('image'),
                 Tables\Columns\TextColumn::make('image_description'),
             ])
             ->filters([
@@ -153,8 +164,6 @@ class AddressesRelationManager extends RelationManager
                     ->modalDescription('View address information')
                     ->modalIcon('heroicon-o-building-office-2')
                     ->modalIconColor('success'),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -107,11 +107,11 @@ class AdminPanelProvider extends PanelProvider
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->maxContentWidth(MaxWidth::Full)
             ->navigationItems([
-                NavigationItem::make('clients')
-                    ->label('Maintenance')
-                    ->url(fn (): string => ClientResource::getUrl('create'))
-                    ->group('Clients Management')
-                    ->sort(1),
+                // NavigationItem::make('clients')
+                //     ->label('Maintenance')
+                //     ->url(fn (): string => ClientResource::getUrl('create'))
+                //     ->group('Clients Management')
+                //     ->sort(1),
                 // ...
             ])
             ->middleware([

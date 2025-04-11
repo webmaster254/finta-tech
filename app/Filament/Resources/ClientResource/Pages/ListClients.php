@@ -15,14 +15,14 @@ class ListClients extends ListRecords
 {
     protected static string $resource = ClientResource::class;
 
-    protected function getHeaderActions(): array
-    {
-        return [
+    // protected function getHeaderActions(): array
+    // {
+    //     return [
             
-            Actions\CreateAction::make()
-                ->icon("heroicon-o-plus"),
-        ];
-    }
+    //         Actions\CreateAction::make()
+    //             ->icon("heroicon-o-plus"),
+    //     ];
+    // }
 
     public function getTabs(): array
     {

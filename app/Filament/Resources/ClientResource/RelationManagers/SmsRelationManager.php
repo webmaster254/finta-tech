@@ -18,6 +18,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 class SmsRelationManager extends RelationManager
 {
     protected static string $relationship = 'sms';
+    protected static ?string $navigationLabel = 'Channel';
 
     public function form(Form $form): Form
     {

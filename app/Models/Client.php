@@ -76,12 +76,13 @@ class Client extends Model implements HasName, HasAvatar
         'privacy_policy',
         'signature_confirmed',
         'referees_contacted',
-        'lead_source',
+        'client_lead',
         'existing_client',
     ];
 
    protected $casts = [
     'status' => Status::class,
+    'client_lead' => 'array',
     'terms_and_condition' => 'boolean',
     'privacy_policy' => 'boolean',
     'signature_confirmed' => 'boolean',

@@ -7,6 +7,7 @@ use App\Models\Loan\Loan;
 use Filament\Tables\Table;
 use App\Events\LoanDisbursed;
 use Filament\Tables\Actions\Action;
+use Filament\Support\Enums\MaxWidth;
 use App\Filament\Exports\LoanExporter;
 use App\Filament\Imports\LoanImporter;
 use Filament\Forms\Components\Repeater;
@@ -14,6 +15,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Actions\ExportAction;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Wizard\Step;
@@ -83,6 +85,7 @@ class ListApprovedLoans extends Page implements HasTable
                 ])
             ->headerActions([])
             ->actions([
+                ActionGroup::make([
                 Action::make('disburse')
                     ->label('Disburse Loan')
                     ->icon('heroicon-o-check')
@@ -102,6 +105,7 @@ class ListApprovedLoans extends Page implements HasTable
                              ->send();
                        //SendLoanDisbursedNotificationJob::dispatch($record);
                     })
+                    ->modalWidth(MaxWidth::SevenExtraLarge)
                     ->fillForm(fn (Loan $record): array => [
                         'approved_amount' => $record->approved_amount,
                         'loan_product_id' => $record->loan_product->name,
@@ -147,6 +151,7 @@ class ListApprovedLoans extends Page implements HasTable
                             ];
                         }) : [],
                     ])
+                    
                     ->steps([
                                 Step::make('Loan information')
                                 ->schema([
@@ -280,6 +285,7 @@ class ListApprovedLoans extends Page implements HasTable
                     ->label('Undisburse')
                     ->icon('heroicon-o-x-circle')
                     ->requiresConfirmation(),
+                        ]),
             ]);
     }
 

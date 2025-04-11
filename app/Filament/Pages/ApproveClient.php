@@ -33,7 +33,7 @@ class ApproveClient extends Page implements HasTable
   
     protected static ?string $navigationLabel = 'Approve Clients';
     protected static ?string $navigationGroup = 'Clients Management';
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
 
     protected static string $view = 'filament.pages.approve-client';
@@ -49,6 +49,7 @@ class ApproveClient extends Page implements HasTable
                 TextColumn::make('loan_officer.fullname')
                 ->label('Loan Officer'),
                 TextColumn::make('status')
+                ->badge()
                 ->label('Status'),
             ])
             

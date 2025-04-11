@@ -6,12 +6,14 @@ use Filament\Support\Contracts\HasLabel;
 
 enum Status: string implements HasLabel,  HasColor
         {
+            case Submitted = 'submitted';
             case Active = 'active';
             case Pending = 'pending';
             case Inactive = 'inactive';
             case Closed = 'closed';
             case Deceased = 'deceased';
             case Suspended = 'suspended';
+            case Rejected = 'rejected';
 
             public function getLabel(): ?string
             {
@@ -20,12 +22,14 @@ enum Status: string implements HasLabel,  HasColor
             public function getColor(): string | array | null
             {
                 return match ($this) {
+                    self::Submitted => 'warning',
                     self::Inactive => 'gray',
                     self::Pending => 'info',
                     self::Active => 'success',
                     self::Suspended => 'danger',
                     self::Deceased => 'gray',
                     self::Closed => 'danger',
+                    self::Rejected => 'danger',
                 };
             }
         }

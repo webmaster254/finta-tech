@@ -49,16 +49,16 @@ class CreateClient extends CreateRecord
                 }),
             Step::make('Address Details')
                 ->schema(ClientResource::getAddressInformation()),
-            // Step::make('Next of Kin Details')
-            //     ->schema(ClientResource::getNextOfKinInformation()),
-            // Step::make('Spouse Details')
-            //     ->schema(ClientResource::getSpouseInformation()),
-            // Step::make('Referees Details')
-            //     ->schema(ClientResource::getRefereesInformation()),
-            // Step::make('Client Lead')
-            //     ->schema(ClientResource::getClientLead()),
-            // Step::make('Admin Details')
-            //     ->schema(ClientResource::getAdminInformation()),
+            Step::make('Next of Kin Details')
+                ->schema(ClientResource::getNextOfKinInformation()),
+            Step::make('Spouse Details')
+                ->schema(ClientResource::getSpouseInformation()),
+            Step::make('Referees Details')
+                ->schema(ClientResource::getRefereesInformation()),
+            Step::make('Client Lead')
+                ->schema(ClientResource::getClientLead()),
+            Step::make('Admin Details')
+                ->schema(ClientResource::getAdminInformation()),
             // Step::make('Summary')
             //     ->schema(ClientResource::getClientDetailsSummary()),
         ];

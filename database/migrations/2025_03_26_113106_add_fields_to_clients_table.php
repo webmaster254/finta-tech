@@ -33,7 +33,7 @@ return new class extends Migration
             $table->boolean('privacy_policy')->default(false);
             $table->boolean('signature_confirmed')->default(false);
             $table->boolean('referees_contacted')->default(false);
-            $table->string('lead_source')->nullable();
+            $table->json('client_lead')->nullable();
             $table->foreignId('existing_client')->constrained('clients')->null();
         });
     }
@@ -64,7 +64,7 @@ return new class extends Migration
                 'privacy_policy',
                 'signature_confirmed',
                 'referees_contacted',
-                'lead_source',
+                'client_lead',
                 'existing_client',
             ]);
         });

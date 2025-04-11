@@ -126,149 +126,13 @@ class ClientResource extends Resource implements HasShieldPermissions
     return static::getModel()::where('status', 'pending')->count();
 }
 
-// public static function form(Form $form): Form
-// {
-//     return $form
-//         ->schema([
-//             Forms\Components\Hidden::make('suggested_loan_limit')
-//             ->default(10000),
-//         Forms\Components\Hidden::make('account_number'),
-//         Forms\Components\Select::make('client_type_id')
-//             ->label('Client Type')
-//             ->options(ClientType::all()->pluck('name', 'id'))
-//             ->required(),
-//         Forms\Components\Select::make('title_id')
-//             ->relationship('title','name'),
-//         Forms\Components\TextInput::make('first_name')
-//             ->required()
-//             ->maxLength(255),
-//         Forms\Components\TextInput::make('middle_name')
-//             ->maxLength(255),
-//         Forms\Components\TextInput::make('last_name')
-//             ->required()
-//             ->maxLength(255),
-//         Forms\Components\TextInput::make('aka')
-//             ->label('AKA')
-//             ->maxLength(50),
-//         Forms\Components\Select::make('id_type')
-//             ->label('ID Type')
-//             ->required()
-//             ->options(IDType::class),
-//         Forms\Components\TextInput::make('id_number')
-//             ->label('ID Number')
-//             ->numeric()
-//             ->required()
-//             ->unique(ignoreRecord: true)
-//             ->minLength(6)
-//             ->maxLength(8),
-//         Forms\Components\select::make('gender')
-//             ->required()
-//             ->options(Gender::class),
-//         Forms\Components\Hidden::make('status')
-//             ->default('pending'),
-//         Forms\Components\Select::make('marital_status')
-//             ->options(MaritalStatus::class),
-//         Forms\Components\select::make('education_level')
-//             ->label('Education Level')
-//             ->required()
-//             ->options(EducationLevel::class),
-//         Forms\Components\select::make('profession_id')
-//             ->label('Profession')
-//             ->required()
-//             ->options(Profession::all()->pluck('name', 'id')),
-
-//         FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('mobile')
-//             ->label('Mobile')
-//             ->region('KE')
-//             ->displayFormat(PhoneNumberFormat::E164)
-//             ->databaseFormat(PhoneNumberFormat::INTERNATIONAL)
-//             ->mask('9999999999')
-//             ->required(),
-//         FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('other_mobile_no')
-//             ->label('Other Mobile')
-//             ->region('KE')
-//             ->displayFormat(PhoneNumberFormat::E164)
-//             ->databaseFormat(PhoneNumberFormat::INTERNATIONAL)
-//             ->mask('9999999999'),
-//         Forms\Components\TextInput::make('email')
-//             ->label('Email')
-//             ->email()
-//             ->maxLength(50),
-//         Forms\Components\TextInput::make('kra_pin')
-//             ->label('KRA PIN')
-//             ->maxLength(25),
-//         Forms\Components\DatePicker::make('dob')
-//             ->label('Date of Birth')
-//             ->required(),
-//         Forms\Components\Select::make('source_of_income')
-//             ->options(SourceOfIncome::class),
-//         Forms\Components\Select::make('type_of_tech')
-//             ->required()
-//             ->label('Type of Technology')
-//             ->options(TypeOfTech::class),
-//         Forms\Components\Select::make('loan_officer_id')
-//             ->label('Relationship Officer')
-//             ->relationship('loan_officer','name',
-//                 modifyQueryUsing:  function (Builder $query) {
-//                     $tenantModel = Filament::getTenant();
-//                     $query->whereHas('branches', function (Builder $query) use ($tenantModel) {
-//                         $query->whereHas('users', function (Builder $query) use ($tenantModel) {
-//                             $query->where('branch_id', $tenantModel->id);
-//                         });
-//                     });
-//                 })
-//                 ->preload()
-//             ->required(),
-//         CuratorPicker::make('photo')
-//             ->label('Avatar')
-//             ->buttonLabel('Upload Avatar')
-//             ->size('sm')
-//             ->imageResizeTargetWidth('200')
-//             ->imageResizeTargetHeight('200'),
-//         CuratorPicker::make('id_front')
-//             ->label('ID Front')
-//             ->buttonLabel('Upload ID Front')
-//             ->size('sm')
-//             ->imageResizeTargetWidth('200')
-//             ->imageResizeTargetHeight('200')
-//             ->required()
-//             ,
-//         CuratorPicker::make('id_back')
-//             ->label('ID Back')
-//             ->buttonLabel('Upload ID Back')
-//             ->size('sm')
-//             ->imageResizeTargetWidth('200')
-//             ->imageResizeTargetHeight('200')
-//             ->required(),
-//             Forms\Components\TextInput::make('notes')
-//             ->label('Notes')
-//             ->maxLength(255),
-//         SignaturePad::make('signature')
-//              ->dotSize(2.0)
-//             ->lineMinWidth(0.5)
-//             ->lineMaxWidth(2.5)
-//             ->backgroundColor('rgba(0,0,0,0)')  // Background color on light mode
-//             ->backgroundColorOnDark('#f0a')
-//             ->penColor('#000')
-//             ->penColorOnDark('#fff') 
-//             ->throttle(16)
-//             ->minDistance(5)
-//             ->velocityFilterWeight(0.7) 
-//              ->downloadable()                    // Allow download of the signature (defaults to false)
-//             ->downloadableFormats([             // Available formats for download (defaults to all)
-//                 DownloadableFormat::PNG,
-//                 DownloadableFormat::JPG,
-//                 DownloadableFormat::SVG,
-//             ]),
-//         ]);
-// }
-
 
 public static function form(Form $form): Form
 {
     return $form
         ->schema([
             Wizard::make()
+            ->columnSpanFull()
                 ->schema([
                     Wizard\Step::make('Personal Information')
                          ->description('Enter client personal information')
@@ -620,16 +484,8 @@ public static function form(Form $form): Form
                     ->schema([
                         Infolists\Components\TextEntry::make('status')
                             ->badge(),
-                        Infolists\Components\ImageEntry::make('id_front')
-                            ->getStateUsing(function($record) {
-                                $media = Media::where('id', $record->id_front)->first();
-                                return $media ? $media->path : null;
-                            }),
-                        Infolists\Components\ImageEntry::make('id_back')
-                            ->getStateUsing(function($record) {
-                                $media = Media::where('id', $record->id_back)->first();
-                                return $media ? $media->path : null;
-                            }),
+                        Infolists\Components\ImageEntry::make('id_front'),
+                        Infolists\Components\ImageEntry::make('id_back'),
                         Infolists\Components\TextEntry::make('email')
                             ->color('info')
                             ->columnSpan(2),
@@ -821,22 +677,22 @@ public static function form(Form $form): Form
             Country::make('country')
                 ->label('Country')
                 ->required(),
-            Forms\Components\Select::make('county')
+            Forms\Components\Select::make('county_id')
                 ->label('County')
                 ->options(County::all()->pluck('name', 'id'))
                 ->live()
                 ->required(),
-            Forms\Components\Select::make('sub_county')
+            Forms\Components\Select::make('sub_county_id')
                 ->label('Sub County')
                 ->live()
                 ->options(fn (Get $get) => SubCounty::query()
-                        ->where('county_id', $get('county'))
+                        ->where('county_id', $get('county_id'))
                         ->get()
                         ->pluck('name', 'id'))
                 ->required(),
-            Forms\Components\Select::make('ward')
+            Forms\Components\Select::make('ward_id')
                ->options(fn (Get $get) => Town::query()
-                        ->where('sc_id', $get('sub_county'))
+                        ->where('sc_id', $get('sub_county_id'))
                         ->get()
                         ->pluck('name', 'id'))
                 ->label('Ward')
@@ -968,6 +824,30 @@ public static function form(Form $form): Form
             Forms\Components\TextInput::make('occupation')
                 ->label('Spouse Occupation')
                 ->maxLength(100),
+                FileUpload::make('id_front')
+                ->label('ID Front')
+                ->image()
+                ->imageEditor()
+                ->imagePreviewHeight('250')
+                ->loadingIndicatorPosition('left')
+                ->panelAspectRatio('2:1')
+                ->panelLayout('integrated')
+                ->removeUploadedFileButtonPosition('right')
+                ->uploadButtonPosition('left')
+                ->uploadProgressIndicatorPosition('left')
+                ->required(),
+            FileUpload::make('id_back')
+                ->label('ID Back')
+                ->image()
+                ->imageEditor()
+                ->imagePreviewHeight('250')
+                ->loadingIndicatorPosition('left')
+                ->panelAspectRatio('2:1')
+                ->panelLayout('integrated')
+                ->removeUploadedFileButtonPosition('right')
+                ->uploadButtonPosition('left')
+                ->uploadProgressIndicatorPosition('left')
+                ->required(),
             Forms\Components\FileUpload::make('photo')
                 ->label('Photo')
                 ->image()
@@ -1053,11 +933,11 @@ public static function form(Form $form): Form
     public static function getClientLead(): array
     {
         return [
-            Repeater::make('client_leads')
+            Repeater::make('client_lead')
             ->addActionLabel('Add Client Lead')
             ->columns(3)
             ->schema([
-                Forms\Components\Select::make('source')
+                Forms\Components\Select::make('lead_source')
                 ->label('Source')
                 ->live()
                 ->options([
@@ -1069,14 +949,29 @@ public static function form(Form $form): Form
                 ])
                 ->required(),
                 Forms\Components\Select::make('existing_client')
-                    ->label('Existing Client')
-                    ->visible(fn (Get $get): bool => $get('source') === 'existing_client')
-                    ->options(Client::all()->pluck('full_name', 'id'))
-                    ->required(),
-                Forms\Components\Textarea::make('others')
-                    ->label('Others')
-                    ->visible(fn (Get $get): bool => $get('source') === 'other')
-                    ->required(),
+                ->label('Existing Client')
+                ->live()
+                ->visible(fn (Get $get): bool => $get('lead_source') === 'existing_client')
+                ->options(Client::where('status', 'active')->get()->mapWithKeys(function ($client) {
+                    return [$client->id => $client->first_name . ' ' . $client->last_name];
+                }))
+                ->required(),
+            Forms\Components\Placeholder::make('client_account')
+                ->label('Client Account')
+                ->content(function (Forms\Get $get): ?string {
+                    $client =Client::where('id', $get('existing_client'))->first();
+                    return $client? $client->account_number:null;
+                }),
+            Forms\Components\Placeholder::make('client_status')
+                ->label('Client Status')
+                ->content(function (Forms\Get $get): ?string {
+                    $client = Client::where('id', $get('existing_client'))->first();
+                    return $client ? $client->status->value : null;
+                }),
+            Forms\Components\Textarea::make('others')
+                ->label('Others')
+                ->visible(fn (Get $get): bool => $get('lead_source') === 'other')
+                ->required(),
 
             ])
             ->columns(3),
@@ -1335,12 +1230,12 @@ public static function form(Form $form): Form
     {
         return [
             LoansRelationManager::class,
-            NextOfKinsRelationManager::class,
-            FilesRelationManager::class,
             AddressesRelationManager::class,
             SpousesRelationManager::class,
+            NextOfKinsRelationManager::class,
             RefereesRelationManager::class,
             SmsRelationManager::class,
+            FilesRelationManager::class,
 
         ];
     }

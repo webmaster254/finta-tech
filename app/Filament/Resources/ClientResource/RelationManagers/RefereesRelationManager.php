@@ -59,10 +59,6 @@ class RefereesRelationManager extends RelationManager
                     ->label('Relationship'),
                 Tables\Columns\TextColumn::make('mobile')
                     ->label('Mobile'),
-                Tables\Columns\TextColumn::make('email')
-                    ->label('Email'),
-                Tables\Columns\TextColumn::make('address')
-                    ->label('Address'),
             ])
             ->filters([
                 //
@@ -73,8 +69,8 @@ class RefereesRelationManager extends RelationManager
                     ->icon('heroicon-o-plus-circle'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                // Tables\Actions\EditAction::make(),
+                // Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

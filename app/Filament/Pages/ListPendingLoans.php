@@ -13,6 +13,8 @@ use Filament\Forms\Components\Repeater;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Actions\ExportAction;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Wizard\Step;
@@ -22,7 +24,6 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Awcodes\Curator\Components\Forms\CuratorPicker;
 use Filament\Tables\Columns\Summarizers\Summarizer;
 use Joaopaulolndev\FilamentPdfViewer\Forms\Components\PdfViewerField;
-use Filament\Notifications\Notification;
 
 class ListPendingLoans extends Page implements HasTable
 {
@@ -84,6 +85,7 @@ class ListPendingLoans extends Page implements HasTable
                 ])
             ->headerActions([])
             ->actions([
+                ActionGroup::make([
                 Action::make('approve')
                     ->label('Approve')
                     ->icon('heroicon-o-check')
@@ -284,6 +286,7 @@ class ListPendingLoans extends Page implements HasTable
                         $record->status = 'rejected';
                         $record->save();
                     }),
+                ]),
             ]);
     }
 }

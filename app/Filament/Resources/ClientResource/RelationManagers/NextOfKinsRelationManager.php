@@ -37,8 +37,6 @@ class NextOfKinsRelationManager extends RelationManager
                     ->label('Relationship')
                    ->relationship('client_relationship', 'name')
                     ->required(),
-                Forms\Components\Select::make('marital_status')
-                    ->options(MaritalStatus::class),
                 FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('mobile')
                     ->label('Mobile')
                     ->region('KE')
@@ -78,8 +76,6 @@ class NextOfKinsRelationManager extends RelationManager
                 Tables\Actions\CreateAction::make(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
