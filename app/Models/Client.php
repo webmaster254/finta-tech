@@ -12,6 +12,7 @@ use App\Models\Message;
 use App\Models\Loan\Loan;
 use App\Models\ClientFile;
 use App\Models\ClientType;
+use App\Models\ClientAccount;
 use App\Models\EmploymentInfo;
 use Filament\Facades\Filament;
 use App\Models\ClientNextOfKins;
@@ -265,10 +266,25 @@ public function next_of_kins(): HasMany
     {
         return $this->hasMany(ClientFile::class, 'client_id', 'id');
     }
+    
+    /**
+     * Get the ordinary account associated with this client.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function account()
+    {
+        return $this->hasOne(ClientAccount::class);
+    }
 
     public function changeStatus($status)
     {
         $this->update(['status' => $status]);
+        
+        // If client is active and doesn't have an account yet, create one
+        if ($status === 'active' && !$this->account()->exists()) {
+            $this->createOrdinaryAccount();
+        }
     }
 
     public function activate()
@@ -278,7 +294,11 @@ public function next_of_kins(): HasMany
             'closed_by_user_id' => null,
             'closed_on_date' => null,
         ]);
-
+        
+        // If client is activated and doesn't have an account yet, create one
+        if (!$this->account()->exists()) {
+            $this->createOrdinaryAccount();
+        }
     }
     public function deactivate()
     {
@@ -373,5 +393,29 @@ public function next_of_kins(): HasMany
         return round($suggestedLimit, -2); // Round to nearest 100
     }
 
-
+    /**
+     * Create an ordinary account for the client.
+     *
+     * @return ClientAccount
+     */
+    public function createOrdinaryAccount(): ClientAccount
+    {
+        // Check if account already exists
+        if ($account = $this->account()->first()) {
+            return $account;
+        }
+        
+        // Create the account
+        return $this->account()->create([
+            'balance' => 0.00,
+            'available_balance' => 0.00,
+            'hold_amount' => 0.00,
+            'currency_code' => 'KES', // Default currency
+            'status' => 'active',
+            'activated_at' => now(),
+            'closed_by_id' => null,
+            'closed_at' => null,
+            'notes' => 'Ordinary account for tracking client payments and transactions',
+        ]);
+    }
 }

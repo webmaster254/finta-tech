@@ -3,6 +3,7 @@
 namespace App\Models\Loan;
 
 use App\Models\Fund;
+use App\Models\Product;
 use App\Models\Currency;
 use App\Models\Loan\LoanCharge;
 use Illuminate\Database\Eloquent\Model;
@@ -67,7 +68,7 @@ class LoanProduct extends Model
         'auto_allocate_overpayments',
         'allow_additional_charges',
         'auto_disburse',
-        'require_linked_savings_account',
+        'repayment_account_id',
         'min_amount',
         'max_amount',
         'accounting_rule',
@@ -81,6 +82,11 @@ class LoanProduct extends Model
     public function fund()
     {
         return $this->belongsTo(Fund::class, 'fund_id', 'id');
+    }
+
+    public function repaymentAccount()
+    {
+        return $this->belongsTo(Product::class, 'repayment_account_id', 'id');
     }
 
     public function currency(){

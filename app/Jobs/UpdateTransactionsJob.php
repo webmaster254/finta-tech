@@ -35,9 +35,19 @@ class UpdateTransactionsJob implements ShouldQueue
     public function handle(): void
     {
         $loan = $this->loan;
-        $data=$this->loanTransaction;
+        $data = $this->loanTransaction;
         $repayment_schedules = $loan->repayment_schedules;
 
+        // Get client account to track the payment allocation
+        $client = Client::find($loan->client_id);
+        $clientAccount = $client->account;
+        
+        if (!$clientAccount) {
+            // Create account if it doesn't exist
+            $clientAccount = $client->createOrdinaryAccount();
+        }
+
+        // Create the journal transaction as before
         $journal_transaction = new Transaction();
         $journal_transaction->loan_id = $loan->id;
         $journal_transaction->branch_id = $loan->branch_id;
@@ -45,7 +55,7 @@ class UpdateTransactionsJob implements ShouldQueue
         $journal_transaction->type = 'journal';
         $journal_transaction->reviewed = 1;
         $journal_transaction->description = 'Loan repayment';
-        $journal_transaction->amount= $data['amount'];
+        $journal_transaction->amount = $data['amount'];
         $journal_transaction->posted_at = date("Y-m-d");
         $journal_transaction->save();
         $journal_transaction_id = $journal_transaction->id;
@@ -294,6 +304,21 @@ class UpdateTransactionsJob implements ShouldQueue
         $transactions_to_be_updated = compare_multi_dimensional_array($changed_transactions, $unchanged_transactions);
         foreach ($transactions_to_be_updated as $key => $value) {
             $transaction = $unchanged_transactions[$key];
+
+        //update client account transaction table with different transaction type(principal repayment,fee repayment,penalty repayment,interest repayment)
+        $clientAccountnumber = $clientAccount->account_number;
+
+        //record principal repayment
+        $clientAccount->withdraw(
+            -$transaction[3],
+            'loan_repayment',
+            'Principal repayment for loan #' . $loan->loan_account_number,
+            $data['reference_number'],
+            $data['receipt_number'],
+            $data['transaction_id'],
+            ['loan_id' => $transaction[1]]
+        );
+        
 
         //check if accounting is enabled
         if ($loan->loan_product->accounting_rule == "cash" || $loan->loan_product->accounting_rule == "accrual_periodic" || $loan->loan_product->accounting_rule == "accrual_upfront") {

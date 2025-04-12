@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use Filament\Forms;
 use App\Models\Fund;
 use Filament\Tables;
+use App\Models\Product;
 use Filament\Forms\Get;
 use App\Models\Currency;
 use Filament\Forms\Form;
@@ -21,10 +22,10 @@ use Filament\Forms\Components\Grid;
 use App\Enums\RepaymentFrequencyType;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
+use App\Filament\Clusters\Configuration;
 use Filament\Tables\Actions\ActionGroup;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Infolists\Components\Fieldset;
-use App\Filament\Clusters\Configuration;
 use Filament\Infolists\Components\TextEntry;
 use App\Models\LoanTransactionProcessingStrategy;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -148,6 +149,10 @@ class LoanProductResource extends Resource
                 Forms\Components\Select::make('amortization_method')
                     ->label('Amortization Method')
                     ->options(AmortizationMethod::class)
+                    ->required(),
+                Forms\Components\Select::make('repayment_account_id')
+                    ->label('Repayment Account')
+                    ->options(Product::all()->pluck('name', 'id'))
                     ->required(),
 
 

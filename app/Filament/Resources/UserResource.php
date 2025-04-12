@@ -160,6 +160,7 @@ class UserResource extends Resource
                 //
             ])
             ->actions([
+                //\Tapp\FilamentInvite\Tables\InviteAction::make(),
                 Impersonate::make(),
                 //->redirectTo(route('/app')),
                 ActionGroup::make([

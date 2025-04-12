@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreignIdFor(Currency::class)->constrained()->onUpdate('cascade')->onDelete('cascade');
             $table->foreignIdFor(LoanTransactionProcessingStrategy::class)->constrained()->onUpdate('cascade')->onDelete('cascade');
             $table->foreignIdFor(ChartOfAccount::class)->constrained()->onUpdate('cascade')->onDelete('cascade');
+            $table->foreignId('repayment_account_id')->constrained('products')->onUpdate('cascade')->onDelete('cascade');
             $table->bigInteger('fund_source_chart_of_account_id')->unsigned()->nullable();
             $table->bigInteger('loan_portfolio_chart_of_account_id')->unsigned()->nullable();
             $table->bigInteger('interest_receivable_chart_of_account_id')->unsigned()->nullable();

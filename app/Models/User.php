@@ -14,6 +14,7 @@ use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Filament\Models\Contracts\HasAvatar;
+use Filament\Notifications\Notification;
 use Illuminate\Notifications\Notifiable;
 use Filament\Models\Contracts\HasTenants;
 use Filament\Models\Contracts\FilamentUser;
@@ -93,7 +94,7 @@ class User extends Authenticatable implements FilamentUser ,HasName, HasAvatar ,
 
     }
 
-
+   
 
  public function currentBranch()
  {

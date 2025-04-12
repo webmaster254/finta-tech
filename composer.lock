@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "59ac3bef521da342d9e25381f82748b2",
+    "content-hash": "81aef4752d3f93e8f82a29f1c66d5771",
     "packages": [
         {
             "name": "abanoubnassem/filament-phone-field",
@@ -15919,6 +15919,85 @@
                 "source": "https://github.com/TappNetwork/filament-authentication-log"
             },
             "time": "2024-03-08T17:01:28+00:00"
+        },
+        {
+            "name": "tapp/filament-invite",
+            "version": "v1.0.9",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/TappNetwork/Filament-Invite.git",
+                "reference": "e9e07e7df9c7d59ec78ccfe5ba701923988eda46"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/TappNetwork/Filament-Invite/zipball/e9e07e7df9c7d59ec78ccfe5ba701923988eda46",
+                "reference": "e9e07e7df9c7d59ec78ccfe5ba701923988eda46",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^3.0",
+                "php": "^8.1",
+                "spatie/laravel-package-tools": "^1.15.0"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.0",
+                "nunomaduro/collision": "^8.1.1||^7.10.0",
+                "nunomaduro/larastan": "^2.0.1",
+                "orchestra/testbench": "^9.0.0||^8.22.0",
+                "pestphp/pest": "^2.1",
+                "pestphp/pest-plugin-arch": "^2.0",
+                "pestphp/pest-plugin-laravel": "^2.0",
+                "phpstan/extension-installer": "^1.1",
+                "phpstan/phpstan-deprecation-rules": "^1.0",
+                "phpstan/phpstan-phpunit": "^1.0",
+                "spatie/laravel-ray": "^1.26"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "FilamentInvite": "Tapp\\FilamentInvite\\Facades\\FilamentInvite"
+                    },
+                    "providers": [
+                        "Tapp\\FilamentInvite\\FilamentInviteServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Tapp\\FilamentInvite\\": "src/",
+                    "Tapp\\FilamentInvite\\Database\\Factories\\": "database/factories/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "TappNetwork",
+                    "email": "scott@tappnetwork.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "invite users from filament panel",
+            "homepage": "https://github.com/tapp/filament-invite",
+            "keywords": [
+                "filament-invite",
+                "laravel",
+                "tapp"
+            ],
+            "support": {
+                "issues": "https://github.com/tapp/filament-invite/issues",
+                "source": "https://github.com/tapp/filament-invite"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/Tapp",
+                    "type": "github"
+                }
+            ],
+            "time": "2024-08-07T17:56:20+00:00"
         },
         {
             "name": "thiktak/filament-simple-list-entry",

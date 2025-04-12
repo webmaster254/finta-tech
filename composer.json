@@ -66,6 +66,7 @@
         "spatie/laravel-permission": "^6.2",
         "stechstudio/filament-impersonate": "^3.8",
         "tapp/filament-authentication-log": "^3.0",
+        "tapp/filament-invite": "^1.0",
         "thiktak/filament-simple-list-entry": "^1.0",
         "tomatophp/filament-alerts": "^2.2",
         "tomatophp/filament-notes": "^1.0",

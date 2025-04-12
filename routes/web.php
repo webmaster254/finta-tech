@@ -39,9 +39,9 @@ Route::get('stkpayments', [MpesaController::class, 'fetchStkPayments']);
 
 Route::get('dtb/confirmation', [DtbController::class, 'Confirmation']);
 
-Route::get('b2c', 'MpesaController@b2c');
-Route::post('b2cresult', 'MpesaController@b2cResult');
-Route::post('b2ctimeout', 'MpesaController@b2cTimeout');
+Route::get('b2c', [MpesaController::class, 'b2c']);
+Route::post('b2cresult', [MpesaController::class, 'b2cResult']);
+Route::post('b2ctimeout', [MpesaController::class, 'b2cTimeout']);
 
 Route::post('/dtb-token',[DtbController::class, 'generateToken']);
 Route::post('/dtb/b2c', [DtbController::class, 'DtbB2C']);
