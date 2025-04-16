@@ -73,13 +73,11 @@ class ListSubmittedClients extends Page implements HasTable
             
             ->actions([
                 ActionGroup::make([
-                Action::make('edit')
+                    Action::make('edit')
                     ->label('Edit Client')
                     ->icon('heroicon-o-pencil')
-                   // ->url(fn (Client $record): string => ClientResource::getUrl('edit', ['record' => $record]))
-                   ->form([
-                    ClientResource::getEditFormSchema(),
-                    ])
+                     ->url(fn (Client $record): string => ClientResource::getUrl('edit', ['record' => $record]))
+                    
                     ->color('success')   
                     ]),
             ]);

@@ -65,12 +65,23 @@ class BusinessResource extends Resource
                 Forms\Components\Hidden::make('status')
                 ->default('pending'),
             Forms\Components\Select::make('client_id')
+            ->live(onBlur: true)
+            ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, ?int $state) {
+                $client = Client::find($state);
+                $set('client_name', $client->full_name);
+            })
             ->options(Client::where('source_of_income', 'Business')->get()->mapWithKeys(function ($client) {
-                return [$client->id => $client->first_name . ' ' . $client->last_name];
+                return [$client->id => $client->account_number];
                 }))
                 ->label('Client')
                 ->required(),
+            Forms\Components\TextInput::make('client_name')
+                ->label('Client Name')
+                ->disabled(),
+
+                
             Forms\Components\TextInput::make('name')
+                ->label('Business Name')
                 ->required()
                 ->maxLength(255),
             Forms\Components\Select::make('business_type')
@@ -83,7 +94,18 @@ class BusinessResource extends Resource
                 ->required(),
             Forms\Components\DatePicker::make('establishment_date')
                 ->native(false)
-                ->required(),
+                ->required()
+                ->before(now())
+                ->maxDate(now()->subMonths(6))
+                ->rule(function () {
+                    return function (string $attribute, $value, \Closure $fail) {
+                        $date = \Carbon\Carbon::parse($value);
+                        if ($date->isAfter(now()->subMonths(6))) {
+                            $fail("The business must be at least 6 months old.");
+                        }
+                    };
+                })
+                ->helperText('Business must be at least 6 months old'),
             Forms\Components\TextInput::make('location')
                 ->maxLength(255),
             Forms\Components\Select::make('ownership')

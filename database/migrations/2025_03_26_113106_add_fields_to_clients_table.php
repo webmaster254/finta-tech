@@ -29,8 +29,8 @@ return new class extends Migration
             $table->string('signature')->nullable();
             $table->string('privacy_signature')->nullable();
             $table->string('reg_form')->nullable();
-            $table->boolean('terms_and_condition')->default(false);
-            $table->boolean('privacy_policy')->default(false);
+            $table->boolean('id_verified')->default(false);
+            $table->boolean('address_verified')->default(false);
             $table->boolean('signature_confirmed')->default(false);
             $table->boolean('referees_contacted')->default(false);
             $table->json('client_lead')->nullable();
@@ -60,8 +60,8 @@ return new class extends Migration
                 'hashed_mobile',
                 'signature',
                 'privacy_signature',
-                'terms_and_condition',
-                'privacy_policy',
+                'id_verified',
+                'address_verified',
                 'signature_confirmed',
                 'referees_contacted',
                 'client_lead',

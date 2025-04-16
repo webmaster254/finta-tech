@@ -11,6 +11,7 @@ use App\Models\Client;
 use App\Models\Message;
 use App\Models\Loan\Loan;
 use App\Models\ClientFile;
+use App\Models\ClientLead;
 use App\Models\ClientType;
 use App\Models\ClientAccount;
 use App\Models\EmploymentInfo;
@@ -73,19 +74,16 @@ class Client extends Model implements HasName, HasAvatar
         'kra_pin',
         'reg_form',
         'privacy_signature',
-        'terms_and_condition',
-        'privacy_policy',
+        'id_verified',
+        'address_verified',
         'signature_confirmed',
         'referees_contacted',
-        'client_lead',
-        'existing_client',
     ];
 
    protected $casts = [
     'status' => Status::class,
-    'client_lead' => 'array',
-    'terms_and_condition' => 'boolean',
-    'privacy_policy' => 'boolean',
+    'id_verified' => 'boolean',
+    'address_verified' => 'boolean',
     'signature_confirmed' => 'boolean',
     'referees_contacted' => 'boolean',
    ];
@@ -129,7 +127,10 @@ public function sent_by(): BelongsTo
     return $this->belongsTo(User::class, 'sent_by');
 }
 
-
+public function client_lead()
+{
+    return $this->hasMany(ClientLead::class);
+}
  public function addresses()
  {
      return $this->hasMany(Address::class,'client_id');
@@ -279,10 +280,15 @@ public function next_of_kins(): HasMany
 
     public function changeStatus($status)
     {
-        $this->update(['status' => $status]);
+        $this->update([
+            'status' => $status
+        ]);
         
         // If client is active and doesn't have an account yet, create one
         if ($status === 'active' && !$this->account()->exists()) {
+            $this->update([
+                'suggested_loan_limit' => 100000
+            ]);
             $this->createOrdinaryAccount();
         }
     }
@@ -319,7 +325,7 @@ public function next_of_kins(): HasMany
         // This is a simplified example
         $score =0;
         $latestLoan = $this->loans()->whereIn('status', ['closed', 'active','rescheduled'])->latest()->first();
-        if (!$latestLoan) return 50; // Default score for new clients
+        if (!$latestLoan) return 500; // Default score for new clients
 
         $repayments = $latestLoan->repayment_schedules;
         $totalPayments = $repayments->filter(function ($repayment) {

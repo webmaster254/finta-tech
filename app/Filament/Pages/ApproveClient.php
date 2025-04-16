@@ -7,6 +7,7 @@ use Filament\Pages\Page;
 use Filament\Tables\Table;
 use Filament\Facades\Filament;
 use Filament\Tables\Actions\Action;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Checkbox;
@@ -19,11 +20,13 @@ use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Forms\Components\FileUpload;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Wizard\Step;
 use App\Jobs\SendRegistrationNotificationJob;
 use Filament\Forms\Components\MarkdownEditor;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Awcodes\Curator\Components\Forms\CuratorPicker;
+use Saade\FilamentAutograph\Forms\Components\SignaturePad;
 use Joaopaulolndev\FilamentPdfViewer\Forms\Components\PdfViewerField;
 
 class ApproveClient extends Page implements HasTable
@@ -59,6 +62,7 @@ class ApproveClient extends Page implements HasTable
                     ->label('Approve Client')
                     ->icon('heroicon-o-check')
                     ->action(function (Client $record) {
+                      
                         $record->changeStatus('approved');
                         SendRegistrationNotificationJob::dispatch($record);
                         Notification::make()
@@ -70,6 +74,7 @@ class ApproveClient extends Page implements HasTable
                     ->color('success')
                     ->fillForm(fn (Client $record): array => [
                         'first_name' => $record->first_name,
+                        'aka' => $record->aka,
                         'last_name' => $record->last_name,
                         'middle_name' => $record->middle_name,
                         'account_number' => $record->account_number,
@@ -122,8 +127,8 @@ class ApproveClient extends Page implements HasTable
                         'consent_form' => $record->spouse->consent_form ?? null,
                         'lead_source' => $record->lead_source ?? null,
                         'existing_client' => $record->existing_client ?? null,
-                        'terms_and_condition' => $record->terms_and_condition ?? null,
-                        'privacy_policy' => $record->privacy_policy ?? null,
+                        'id_verified' => $record->id_verified ?? null,
+                        'address_verified' => $record->address_verified ?? null,
                         'signature_confirmed' => $record->signature_confirmed ?? null,
                         'referees_contacted' => $record->referees_contacted ?? null,
                         'reg_form' => $record->reg_form ?? null,
@@ -147,6 +152,21 @@ class ApproveClient extends Page implements HasTable
                                 'email' => $ref->email ?? null,
                                 'address' => $ref->address ?? null,
                                 'relationship' => $ref->client_relationship->name ?? null,
+                            ];
+                        })->toArray() : [],
+                        'client_lead' => $record->client_lead && $record->client_lead->count() > 0 ? $record->client_lead->map(function($lead) {
+                            return [
+                                'lead_source' => $lead->lead_source ?? null,
+                                'existing_client' => isset($lead->existing_client) ? 
+                                    (Client::find($lead->existing_client) ? 
+                                        Client::find($lead->existing_client)->full_name : 
+                                        $record->client_lead['existing_client']) : 
+                                    null,
+                                'status' => isset($lead->existing_client) ? 
+                                    (Client::find($lead->existing_client) ? 
+                                        Client::find($lead->existing_client)->status : 
+                                        $record->client_lead['status']) : 
+                                    null,
                             ];
                         })->toArray() : [],
                     ])
@@ -203,13 +223,13 @@ class ApproveClient extends Page implements HasTable
                                 TextInput::make('type_of_tech')
                                     ->label('Type of Technology')
                                     ->disabled(),
-                                TextInput::make('signature')
+                                SignaturePad::make('signature')
                                     ->label('Signature')
                                     ->disabled(),
-                                TextInput::make('id_front')
+                                FileUpload::make('id_front')
                                     ->label('ID Front')
                                     ->disabled(),
-                                TextInput::make('id_back')
+                                FileUpload::make('id_back')
                                     ->label('ID Back')
                                     ->disabled(),
                             ])
@@ -261,7 +281,7 @@ class ApproveClient extends Page implements HasTable
                                         TextInput::make('estate')
                                             ->label('Estate')
                                             ->disabled(),
-                                        CuratorPicker::make('image')
+                                        FileUpload::make('image')
                                             ->label('Image')
                                             ->disabled(),
                                         TextInput::make('image_description')
@@ -351,38 +371,60 @@ class ApproveClient extends Page implements HasTable
                         Step::make('Client Lead Source')
                             ->description('Client Lead Source')
                             ->schema([
-                                TextInput::make('lead_source')
-                                    ->label('Lead Source')
+                                Repeater::make('client_lead')
+                                ->columns(3)
+                                ->schema([
+                                    TextInput::make('lead_source')
+                                        ->label('Lead Source')
+                                        ->disabled(),
+                                    TextInput::make('existing_client')
+                                        ->label('Existing Client')
+                                        ->visible(fn (\Filament\Forms\Get $get): bool => $get('lead_source') === 'existing_client')
+                                        ->disabled(),
+                                    Hidden::make('status')
+                                        ->label('Status')
+                                        ->disabled(),
+                                    Placeholder::make('client_status')
+                                        ->label('Client Status')
+                                        
+                                        ->visible(fn (\Filament\Forms\Get $get): bool => $get('lead_source') === 'existing_client')
+                                        ->content(function (\Filament\Forms\Get $get) {
+                                            return new \Illuminate\Support\HtmlString(
+                                                view('filament.components.status-badge', [
+                                                    'status' =>  $get('status'),
+                                                ])->render()
+                                            );
+                                        }),
+                                    TextInput::make('others')
+                                    ->label('Others')
+                                    ->visible(fn (\Filament\Forms\Get $get): bool => $get('lead_source') === 'other')
                                     ->disabled(),
-                                TextInput::make('existing_client')
-                                    ->label('Existing Client')
-                                    ->disabled(),
+                                ])->itemLabel(fn (array $state): ?string => $state['lead_source'] ?? null)
+                                ->disabled()
+                                
                             ]),
                         Step::make('Admin')
                             ->description('Admin Approval')
                             ->schema([
-                                Checkbox::make('terms_and_condition')
-                                ->label('Clients accepts Terms and Conditions?')
+                                Toggle::make('id_verified')
+                                ->label('ID Verified?')
                                 ->accepted()
                                 ->disabled()
                                 ->required(),
-                                Checkbox::make('privacy_policy')
-                                ->label('Clients accepts Privacy Policy?')
+                                Toggle::make('address_verified')
+                                ->label('Address Verified?')
                                 ->accepted()
                                 ->disabled()
                                 ->required(),
-                                Checkbox::make('signature_confirmed')
+                                Toggle::make('signature_confirmed')
                                 ->label('Client Signature Confirmed?')
                                 ->accepted()
                                 ->disabled()
                                 ->required(),
-                                Checkbox::make('referees_contacted')
+                                Toggle::make('referees_contacted')
                                 ->label('Client Referees Contacted?')
                                 ->accepted()
                                 ->disabled()
-                                ->required(),
-                                PdfViewerField::make('reg_form')
-                                ->label('Registration Form')
                                 ->required(),
                                 TextInput::make('loan_officer_id')
                                 ->label('Relationship Officer')
@@ -390,16 +432,16 @@ class ApproveClient extends Page implements HasTable
                             ]),
                     ]),
 
-                    Action::make('disapprove')
-                    ->label('Disapprove')
-                    ->icon('heroicon-o-x-circle')
+                    Action::make('rts')
+                    ->label('RTS')
+                    ->icon('heroicon-o-arrow-uturn-left')
                     ->action(function (Client $record) {
                         $record->changeStatus('pending');
-                        Notification::make()
-                                    ->success()
-                                    ->title('Client Disapproved')
-                                    ->body('The client has been disapproved successfully.')
-                                    ->send();
+                        // Notification::make()
+                        //             ->success()
+                        //             ->title('Client Disapproved')
+                        //             ->body('The client has been disapproved successfully.')
+                        //             ->send();
                     })
                     ->color('warning')
                     ->requiresConfirmation(),

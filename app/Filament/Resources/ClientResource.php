@@ -12,7 +12,6 @@ use App\Enums\IDType;
 use App\Enums\Status;
 use App\Models\Title;
 use App\Models\Client;
-use Illuminate\Support\HtmlString;
 use App\Models\County;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
@@ -23,10 +22,9 @@ use App\Enums\TypeOfTech;
 use App\Models\SubCounty;
 use App\Models\ClientType;
 use App\Models\Profession;
-use Filament\Forms\Components\FileUpload;
-use App\Models\ClientRelationship;
 use Filament\Tables\Table;
 use App\Enums\Relationship;
+use Carbon\CarbonInterface;
 use App\Enums\MaritalStatus;
 use App\Enums\EducationLevel;
 use App\Enums\SourceOfIncome;
@@ -37,7 +35,10 @@ use Filament\Resources\Resource;
 use Awcodes\Curator\Models\Media;
 use Awcodes\TableRepeater\Header;
 use Dotswan\MapPicker\Fields\Map;
+use App\Models\ClientRelationship;
+use Filament\Resources\Pages\Page;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\HtmlString;
 use Filament\Forms\Components\Card;
 use Filament\Support\Enums\MaxWidth;
 use Illuminate\Support\Facades\Auth;
@@ -60,6 +61,7 @@ use Filament\Notifications\Notification;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Pages\SubNavigationPosition;
 use Filament\Tables\Actions\ExportAction;
 use Filament\Tables\Actions\ImportAction;
@@ -80,10 +82,9 @@ use Awcodes\Curator\Components\Forms\CuratorPicker;
 use Awcodes\TableRepeater\Components\TableRepeater;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Awcodes\Curator\Components\Tables\CuratorColumn;
-use Saade\FilamentAutograph\Forms\Components\SignaturePad;
-use Saade\FilamentAutograph\Forms\Components\Enums\DownloadableFormat;
 use Ysfkaya\FilamentPhoneInput\Infolists\PhoneEntry;
 use Ysfkaya\FilamentPhoneInput\PhoneInputNumberType;
+use Saade\FilamentAutograph\Forms\Components\SignaturePad;
 use App\Filament\Resources\ClientResource\RelationManagers;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
@@ -92,7 +93,7 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Parfaitementweb\FilamentCountryField\Forms\Components\Country;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 use Joaopaulolndev\FilamentPdfViewer\Forms\Components\PdfViewerField;
-use Filament\Resources\Pages\Page;
+use Saade\FilamentAutograph\Forms\Components\Enums\DownloadableFormat;
 use App\Filament\Resources\ClientResource\RelationManagers\SmsRelationManager;
 use App\Filament\Resources\UserResource\RelationManagers\UsersRelationManager;
 use App\Filament\Resources\ClientResource\RelationManagers\FilesRelationManager;
@@ -102,6 +103,7 @@ use App\Filament\Resources\ClientResource\RelationManagers\RefereesRelationManag
 use App\Filament\Resources\ClientResource\RelationManagers\AddressesRelationManager;
 use App\Filament\Resources\ClientResource\RelationManagers\NextOfKinsRelationManager;
 use App\Filament\Resources\ClientResource\RelationManagers\ProfessionRelationManager;
+use App\Filament\Resources\ClientResource\RelationManagers\RepaymentAccountRelationManager;
 
 
 class ClientResource extends Resource implements HasShieldPermissions
@@ -138,6 +140,7 @@ public static function form(Form $form): Form
                         ->description('Enter client next of kin information')
                         ->schema(self::getNextOfKinInformation()),
                     Wizard\Step::make('Spouse Information')
+                    ->visible(fn (Forms\Get $get) => $get('marital_status') == 'married')
                         ->description('Enter client spouse information')
                         ->schema(self::getSpouseInformation()),
                     Wizard\Step::make('Referees Information')
@@ -146,6 +149,9 @@ public static function form(Form $form): Form
                     Wizard\Step::make('Client Lead')
                         ->description('Enter client lead information')
                         ->schema(self::getClientLead()),
+                    Wizard\Step::make('Privacy Policy')
+                        ->description('Enter client privacy policy information')
+                        ->schema(self::getPrivacyPolicyInformation()),
                     Wizard\Step::make('Admin Information')
                         ->description('Enter client admin information')
                         ->schema(self::getAdminInformation()),
@@ -166,22 +172,14 @@ public static function form(Form $form): Form
             ->columns([
                 Tables\Columns\ImageColumn::make('photo')
                     ->circular()
-                    ->getStateUsing(function($record) {
-                        $media = Media::where('id', $record->photo)->first();
-
-                            if ($media) {
-                                return $media->path;
-                            } else {
-                                return 'https://ui-avatars.com/api/?background=random&name=' . urlencode($record->fullname);
-                            }
-                    }),
+                    ->default(fn (Client $record) => 'https://ui-avatars.com/api/?background=random&name=' . urlencode($record->fullname)),
                 Tables\Columns\TextColumn::make('fullname')
                     ->label('Full Name')
                     ->searchable(['first_name', 'middle_name', 'last_name']),
                 Tables\Columns\TextColumn::make('mobile')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('loan_officer.fullname')
-                    ->label('Loan Officer')
+                    ->label('Relationship Officer')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
@@ -201,7 +199,7 @@ public static function form(Form $form): Form
                                 ->options(Status::class)
                                 ->searchable(),
                 SelectFilter::make('loan_officer_id')
-                                ->label('Loan Officer')
+                                ->label('Relationship Officer')
                                 ->options(User::pluck(DB::raw("CONCAT(first_name, ' ', last_name)"), 'id'))
                                 ->searchable(),
                 DateRangeFilter::make('created_at')
@@ -215,28 +213,23 @@ public static function form(Form $form): Form
             ->actions([
                 ActionGroup::make([
                     Tables\Actions\Action::make('status')
-                    ->label('Change Status')
-                    ->icon('heroicon-o-arrow-path')
-                    ->modalHeading('Change Client Status')
+                    ->label('Disapprove Client')
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->modalHeading('Disapprove Client')
                     ->visible(function(Client $record) {
                         $policy = new ClientPolicy();
                         return $policy->update(Auth::user(), $record);
                     })
-                    ->form([
-                        Forms\Components\Select::make('status')
-                            ->options(Status::class)
-                            ->required(),
-                    ])
-                    ->action(function (Client $record,array $data) {
-                        $record->changeStatus($data['status']);
+                    ->action(function (Client $record) {
+                        $record->changeStatus('pending');
                         Notification::make()
                                     ->success()
-                                    ->title('Status Changed')
-                                    ->body('The status has been changed successfully.')
+                                    ->title('Client Disapproved')
+                                    ->body('The client has been disapproved successfully.')
                                     ->send();
 
                     })
-                    ->color('success')
+                    ->color('danger')
                     ->requiresConfirmation(),
                     Tables\Actions\Action::make('officer')
                         ->label('Change Loan Officer')
@@ -332,15 +325,7 @@ public static function form(Form $form): Form
                         Infolists\Components\ImageEntry::make('photo')
                             ->height(200)
                             ->width(200)
-                            ->getStateUsing(function($record) {
-                                $media = Media::where('id', $record->photo)->first();
-
-                                    if ($media) {
-                                        return $media->path;
-                                    } else {
-                                        return 'https://ui-avatars.com/api/?background=random&name=' . urlencode($record->fullname);
-                                    }
-                            }),
+                            ->default(fn (Client $record) => 'https://ui-avatars.com/api/?background=random&name=' . urlencode($record->fullname)),
                         Infolists\Components\TextEntry::make('fullname')
                             ->color('info')
                             ->label('Full Name')
@@ -448,8 +433,14 @@ public static function form(Form $form): Form
                             ->label('Date of Birth'),
                             Infolists\Components\TextEntry::make('dob')
                             ->color('info')
-                            ->since()
-                            ->dateTimeTooltip()
+                            ->formatStateUsing(function ($state): string {
+                                if (is_string($state)) {
+                                    $date = \Carbon\Carbon::parse($state);
+                                } else {
+                                    $date = $state;
+                                }
+                                return $date->age . ' years';
+                            })
                             ->label('Age'),
                         Infolists\Components\TextEntry::make('notes')
                             ->color('info'),
@@ -546,12 +537,16 @@ public static function form(Form $form): Form
                     ->required()
                     ->label('Type of Technology')
                     ->options(TypeOfTech::class),
-                CuratorPicker::make('photo')
+                FileUpload::make('photo')
                     ->label('Avatar')
-                    ->buttonLabel('Upload Avatar')
-                    ->size('sm')
-                    ->imageResizeTargetWidth('200')
-                    ->imageResizeTargetHeight('200'),
+                    ->image()
+                    ->imageEditor()
+                   ->loadingIndicatorPosition('left')
+                   ->panelAspectRatio('2:1')
+                   ->panelLayout('integrated')
+                   ->removeUploadedFileButtonPosition('right')
+                   ->uploadButtonPosition('left')
+                   ->uploadProgressIndicatorPosition('left'),
                 FileUpload::make('id_front')
                      ->image()
                      ->imageEditor()
@@ -606,8 +601,11 @@ public static function form(Form $form): Form
             ->columns(3)
             ->addActionLabel('Add Address')
             ->label('Addresses')
-            ->minItems(1)
+            ->collapsible()
+            ->defaultItems(2)
+            ->minItems(2)
             ->maxItems(5)
+            ->itemLabel(fn (array $state): ?string => $state['address_type'] ?? null)
             ->schema([
             Forms\Components\Select::make('address_type')
                         ->label('Address Type')
@@ -682,7 +680,7 @@ public static function form(Form $form): Form
             ->readOnly(),
             Forms\Components\TextInput::make('longitude')
             ->readOnly(),
-             FileUpload::make('image')
+            FileUpload::make('image')
                 ->label('Image')
                 ->image()
                 ->imageEditor()
@@ -879,6 +877,7 @@ public static function form(Form $form): Form
     {
         return [
             Repeater::make('client_lead')
+            ->relationship('client_lead')
             ->addActionLabel('Add Client Lead')
             ->columns(3)
             ->schema([
@@ -911,10 +910,17 @@ public static function form(Form $form): Form
                 }),
             Forms\Components\Placeholder::make('client_status')
                 ->label('Client Status')
+                
                 ->visible(fn (Get $get): bool => $get('lead_source') === 'existing_client')
-                ->content(function (Forms\Get $get): ?string {
+                ->content(function (Forms\Get $get) {
                     $client = Client::where('id', $get('existing_client'))->first();
-                    return $client ? $client->status->value : null;
+                    if (!$client) return null;
+                    
+                    return new \Illuminate\Support\HtmlString(
+                        view('filament.components.status-badge', [
+                            'status' => $client->status,
+                        ])->render()
+                    );
                 }),
                 Forms\Components\Textarea::make('others')
                     ->label('Others')
@@ -926,19 +932,132 @@ public static function form(Form $form): Form
         ];
     }
 
+    public static function getPrivacyPolicyInformation(): array
+    {
+        return [
+            Card::make()
+            ->schema([
+                Forms\Components\Placeholder::make('privacy_policy')
+                ->label(fn(Get $get) => new HtmlString('
+                <p style="margin: 15px; color:#00293C; font-weight: bold; text-decoration: underline font-size: 30px"> Privacy Policy</p>
+                <p>1.Finta Tech Limited takes your privacy very seriously. This Privacy Policy explains what personal information we collect, with whom we share it, and how you
+                        (the user of the Service) can prevent us from sharing certain information with certain parties. You should read this Privacy Policy in its entirety.</p>
+                        <p style="margin-bottom: 15px; color:#00293C; font-weight: bold">Data We Collect</p>
+                        <p>Finta Tech Limited obtains most non-public personal information directly from individuals or agents by telephone, by use of application forms or
+                        electronically. Finta Tech Limited may obtain the following information:</p>
+                       
+                       <ol>
+                       <li>First name, last name and title</li>
+                       <li>Contact information including home address, email address, business address, home telephone numbers, business telephone number</li>
+                       <li>ID numbers, Pin numbers and business registration numbers</li>
+                       <li>Individual\'s accounts transactions and any other interactions through Finta Tech Limited.</li>
+                       </ol>
+                       <p style="margin: 15px; color:#00293C; font-weight: bold">Use and security of information</p>
+                       <p>Finta Tech collects personal information:</p>
+                       <ol>
+                       <li>To verify an individual\'s identity and personal information.</li>
+                       <li>To assess an individual\'s application to maintain a financial service.</li>
+                       <li>To improve our products and services.</li>
+                       <li>To conduct product and market research</li>
+                       </ol>
+                       <p>A range of security measures including information access restrictions, internal data classification Policy and record Management Policy, are in place and are
+                        designed to prevent the misuse, interference, loss, unauthorized access, modification or disclosure of the individual personal information. We hold personal
+                        information in physical and electronic forms at our own premises.</p>'))
+                ->columnSpanFull()
+                ->content(''), 
+            Forms\Components\Placeholder::make('personal_info')
+                ->label(fn(Get $get) => new HtmlString('
+                <p style="margin: 15px; color:#00293C; font-weight: bold">Disclosure of personal information and Confidentiality</p>
+                <p>Finta Tech Limited will not sell, distribute or lease a member\'s personal information to third parties unless the Finta Tech Limited believes it necessary for the
+                    conduct of its business, or are required by law to do so. Except in those specific, limited situations, Finta Tech Limited will not make any disclosures of
+                    non-public personal information without a member\'s consent.</p>'))
+                ->columnSpanFull()
+                ->content(''), 
+            Forms\Components\Placeholder::make('terms')
+                ->label(fn(Get $get) => new HtmlString('<p style="margin-bottom: 15px; color:#00293C; font-weight: bold">Terms used in this Privacy Policy shall have the following meanings:</p>
+                <p>"Authorities" includes any judicial, administrative, public or regulatory body, any government, any Tax Authority, securities or futures exchange, court, central
+                bank or law enforcement body, or any of their agents with jurisdiction over Finta Tech Limited.</p>
+                <p>"Compliance Obligations" means obligations of Finta Tech Limited to comply with: (a) Laws or international guidance and internal policies or procedures,
+                (b) any demand from Authorities or reporting, disclosure or other obligations under Laws, and (c) Laws requiring us to verify the identity of our customers.</p>
+                <p>"Customer" or "User" means any individual within the Republic of Kenya to which Finta Tech Limited provides its products or services. 
+                <p>"Customer Information" means your Personal Data, confidential information, and/ or Tax Information, including relevant information about you, your transactions, your
+                use of our products and services, and your relationships with Finta Tech Limited .
+                <p>"Financial Crime" means money laundering, terrorist financing, bribery, corruption, tax evasion, fraud, evasion of economic or trade sanctions, and/ or any
+                acts or attempts to circumvent or violate any Laws relating to these matters.
+                <p>"Laws" include any local law, regulation, judgment or court order, voluntary code, sanctions regime, an agreement between any member of Finta Tech Limited
+                and an Authority, or agreement or treaty between Authorities and applicable to Finta Tech Limited.
+                <p>"Personal Data" or "Personal Information" refers to any information whether recorded in a material form or not, from which the identity of an individual is
+                apparent or can be reasonably and directly ascertained by the entity holding the information, or when put together with other information would directly and
+                certainly identify an individual.
+                <p>"Sensitive Personal Information" refers to Personal Information (1) about an individual\'s race, ethnic origin, marital status, age, color, and religious,
+                philosophical or political affiliations; (2) about an individual\'s health, education, genetic or sexual life of a person, or to any proceeding for any offense
+                committed or alleged to have been committed by such person, the disposal of such proceedings, or the sentence of any court in such proceedings; (3) issued by
+                government agencies peculiar to an individual which includes, but not limited to, social security numbers, previous or current health records, licenses or its
+                denials, suspension or revocation, and tax returns; and (4) specifically established by an executive order or other legislative act to be kept classified.
+                <p>"Tax Authorities" means Kenyan tax, revenue or monetary authorities.</p>
+                <p>"Tax Information" means documentation or information about your tax status. "We", "Our" and "Us" refer to Finta Tech Limited.
+                Reference to the singular includes the plural (and vice versa).</p>'))
+                ->columnSpanFull()
+                ->content(''), 
+            Forms\Components\Placeholder::make('consent')
+                ->label(fn(Get $get) => new HtmlString('<p style="margin-bottom: 15px; color:#00293C; font-weight: bold">By signing hereinunder, you consent to the following:</p>
+                <p>I hereby give consent to the collection and processing of my personal information for legitimate business purposes, included but not limited to
+                    determining my credit score and providing a loan.</p>
+                    <ul>
+                    <li>1.I hereby certify that all the information provided by me is true and correct to the best of my knowledge, and that any misrepresentations or falsity
+                    therein will be considered as an act to defraud Finta Tech Limited and its partners. I authorize Finta Tech Limited to verify and investigate the above
+                    statements/information as may be required, from the references provided and other reasonable sources. For this purpose, I hereby waive my rights on
+                    the confidentiality of client information and expressly consent to the processing of any personal information and records relating to me that might be
+                    obtained from third parties, including government agencies, my employer, credit bureaus, business associates and other entities you may deem proper
+                    and sufficient in the conduct of my business, sensitive or otherwise, for the purpose of determining my eligibility for a loan which I am applying for.
+                    </li>
+                    <li>2. I further agree that this application and all supporting documents and any other information obtained relative to this application shall be used by and
+                    communicated to Finta Tech Limited, and shall remain its property whether or not my credit score is determined, or the loan is granted.</li>
+                    <li>3. I expressly and unconditionally authorize Finta Tech Limited to disclose to any bank or affiliate and other financial institution any information
+                    regarding me. In particular, I hereby acknowledge and authorize:</li></ul>
+                    <ul>
+                    <li>a) the regular submission and disclosure of my basic credit data as well as any updates or corrections thereof; and</li>
+                    <li>b) the sharing of my basic credit data with other lenders, and duly accredited credit reporting agencies.</li>
+                    </ul>
+                    </p>
+                    <p style="margin-bottom: 8px; color:#00293C; font-weight: bold">Read and Accepted</p>
+                    </p>'))
+                ->columnSpanFull()
+                ->content(''), 
+            ])
+            ->columnSpan('full'),
+            SignaturePad::make('privacy_signature')
+               ->label('Privacy Signature')
+                ->dotSize(2.0)
+               ->lineMinWidth(0.5)
+               ->backgroundColor('rgba(0,0,0,0)')  // Background color on light mode
+               ->backgroundColorOnDark('#f0a')
+               ->penColor('#0000FF')
+               ->penColorOnDark('#fff') 
+               ->lineMaxWidth(2.5)
+               ->throttle(16)
+               ->minDistance(5)
+               ->required()
+               ->velocityFilterWeight(0.7) 
+                ->downloadable()                    // Allow download of the signature (defaults to false)
+               ->downloadableFormats([             // Available formats for download (defaults to all)
+                   DownloadableFormat::PNG,
+                   DownloadableFormat::JPG,
+                   DownloadableFormat::SVG,
+               ]),
+        ];
+    }
+
     public static function getAdminInformation(): array
     {
         return [
             Card::make()
             ->schema([  
-                Forms\Components\Checkbox::make('terms_and_condition')
-                ->label('Clients accepts Terms and Conditions?')
+                Forms\Components\Checkbox::make('id_verified')
+                ->label('ID Verified?')
                 ->required(),
-                Forms\Components\Checkbox::make('privacy_policy')
-                ->label('Clients accepts Privacy Policy?')
-                ->required(),
-            Forms\Components\Checkbox::make('signature_confirmed')
-                ->label('Client Signature Confirmed?')
+                Forms\Components\Checkbox::make('address_verified')
+                ->label('Address Verified?')
                 ->required(),
                 Forms\Components\Checkbox::make('referees_contacted')
                 ->label('Client Referees Contacted?')
@@ -1173,12 +1292,13 @@ public static function form(Form $form): Form
     public static function getRelations(): array
     {
         return [
+            RepaymentAccountRelationManager::class,
             LoansRelationManager::class,
+            SmsRelationManager::class,
             AddressesRelationManager::class,
             SpousesRelationManager::class,
-            NextOfKinsRelationManager::class,
             RefereesRelationManager::class,
-            SmsRelationManager::class,
+            NextOfKinsRelationManager::class,
             FilesRelationManager::class,
         ];
     }

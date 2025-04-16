@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\ClientResource\Pages;
 
-use Forms\Get;
+use Filament\Forms\Get;
 use Filament\Actions;
 use Livewire\Component;
 use App\Filament\Resources\ClientResource;
@@ -52,6 +52,7 @@ class CreateClient extends CreateRecord
             Step::make('Next of Kin Details')
                 ->schema(ClientResource::getNextOfKinInformation()),
             Step::make('Spouse Details')
+            ->visible(fn (\Filament\Forms\Get $get) => $get('marital_status') == 'married')
                 ->schema(ClientResource::getSpouseInformation()),
             Step::make('Referees Details')
                 ->schema(ClientResource::getRefereesInformation()),
