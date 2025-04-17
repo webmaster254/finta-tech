@@ -52,7 +52,7 @@ class CollateralRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('value')
                     ->money(Currency::where('is_default', 1)->first()->symbol),
                 Tables\Columns\TextColumn::make('description'),
-                CuratorColumn::make('file'),
+                Tables\Columns\ImageColumn::make('file'),
             ])
             ->filters([
                 //

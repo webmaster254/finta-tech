@@ -26,6 +26,7 @@ use App\Events\LoanRepayment;
 use App\Models\ChartOfAccount;
 use Filament\Facades\Filament;
 use Illuminate\Support\Carbon;
+use App\Enums\CollateralStatus;
 use App\Events\LoanUndisbursed;
 use App\Models\Loan\LoanCharge;
 use App\Events\LoanLinkedCharge;
@@ -34,29 +35,36 @@ use App\Models\Loan\LoanPurpose;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use App\Policies\Loan\LoanPolicy;
+use App\Models\ClientRelationship;
+use App\Models\Loan\LoanGuarantor;
+use Cheesegrits\FilamentPhoneNumbers;
 use Illuminate\Support\Facades\DB;
 use Filament\Forms\Components\Card;
 use Filament\Forms\Components\Grid;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Filters\Filter;
 use Illuminate\Support\Facades\Auth;
+use App\Jobs\DisburseApprovedLoanJob;
 use App\Models\Loan\LoanTransaction ;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Wizard;
 use App\Filament\Exports\LoanExporter;
 use App\Filament\Imports\LoanImporter;
 use Filament\Forms\Components\Section;
 use Filament\Support\Enums\ActionSize;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Actions\BulkAction;
 use Illuminate\Database\Eloquent\Model;
+//use Illuminate\Contracts\Database\Eloquent\Builder;
 use App\Filament\Resources\LoanResource;
+use Brick\PhoneNumber\PhoneNumberFormat;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\Split;
 use Filament\Notifications\Notification;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Enums\FiltersLayout;
-//use Illuminate\Contracts\Database\Eloquent\Builder;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Tables\Actions\ExportAction;
@@ -65,21 +73,21 @@ use Filament\Tables\Filters\QueryBuilder;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Contracts\Support\Htmlable;
 use Filament\Infolists\Components\Fieldset;
-use App\Jobs\DisburseApprovedLoanJob;
-use App\Models\Loan\LoanTransaction as loanTransactions ;
 use Filament\Actions\Action as filteraction;
 use Filament\Infolists\Components\TextEntry;
+
 use Filament\Tables\Columns\Summarizers\Sum;
 use Illuminate\Database\Eloquent\Collection;
 use Filament\Tables\Actions\ExportBulkAction;
 use App\Filament\Resources\LoanResource\Pages;
 use Illuminate\Validation\ValidationException;
-
+use RectorPrefix202411\React\Dns\Model\Record;
 use Filament\Tables\Actions\Action as TableAction;
 use Filament\Tables\Columns\Summarizers\Summarizer;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\LoanResource\RelationManagers;
+use App\Models\Loan\LoanTransaction as loanTransactions ;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Filament\Infolists\Components\Section as InfolistSection;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
@@ -102,7 +110,7 @@ class LoanResource extends Resource implements HasShieldPermissions
     protected static ?string $model = Loan::class;
 
     protected static ?string $navigationIcon = null;
-    protected static ?string $navigationLabel = 'Loans Maintenance';
+    protected static ?string $navigationLabel = 'View Loans';
     protected static ?string $navigationGroup = 'Loans Management';
     protected static ?int $navigationSort = 1;
     protected static ?string $tenantOwnershipRelationshipName = 'branch';
@@ -116,8 +124,35 @@ class LoanResource extends Resource implements HasShieldPermissions
     {
         return $form
             ->schema([
-                Card::make()->schema([
+                Wizard::make()
+                      ->columnSpanFull()
+                ->schema([
+                    Wizard\Step::make('General Loan Information')
+                        ->description('Enter loan information')
+                        ->schema(self::getLoanInformation()),
+                    Wizard\Step::make('Guarantors Information')
+                        ->description('Enter guarantors information')
+                        ->schema(self::getGuarantorsInformation()),
+                    Wizard\Step::make('Collateral Information')
+                        ->description('Enter collateral information')
+                        ->schema(self::getCollateralInformation()),
+                    Wizard\Step::make('Files Information')
+                        ->description('Enter files information')
+                        ->schema(self::getFilesInformation()),
+                    
+                ])             
 
+
+
+
+                
+            ]);
+    }
+
+    public static function getLoanInformation(): array
+    {
+        return [
+            Card::make()->schema([
 
                 Section::make('General Loan Details')->schema([
 
@@ -145,10 +180,11 @@ class LoanResource extends Resource implements HasShieldPermissions
                                                 ->live()
                                                 ->options(function (Get $get){
 
-                                                     $client = Client::where('client_type_id', '=', $get('client_type'))
+                                                     $client = Client::where('client_type_id', '=', $get('client_type_id'))
                                                                   ->where('status', '=', 'active')
                                                                   ->whereDoesntHave('loans', function ($query) {
-                                                                    $query->where('status', 'active')->orWhere('status','pending')
+                                                                    $query->where('status', 'active')
+                                                                    ->orWhere('status','pending')
                                                                     ->orWhere('status','approved');
                                                                 })
                                                                  ->selectRaw('*, CONCAT(first_name, " ", last_name) AS name')
@@ -187,6 +223,7 @@ class LoanResource extends Resource implements HasShieldPermissions
                                         $loanProduct = LoanProduct::where('id',$get('loan_product_id'))->first();
                                         if ($loanProduct) {
                                             $set('principal', $loanProduct->default_principal);
+                                            $set('applied_amount', $loanProduct->default_principal);
                                             $set('interest_rate', $loanProduct->default_interest_rate);
                                             $set('loan_term', $loanProduct->default_loan_term);
                                             $set('repayment_frequency', $loanProduct->repayment_frequency);
@@ -197,6 +234,7 @@ class LoanResource extends Resource implements HasShieldPermissions
                                             $set('amortization_method', $loanProduct->amortization_method);
                                             $set('auto_disburse', $loanProduct->auto_disburse);
                                             $set('installment_multiple_of', $loanProduct->installment_multiple_of);
+                                            $set('chart_of_account_id',$loanProduct->fund_source_chart_of_account_id);
                                         };
 
 
@@ -210,14 +248,14 @@ class LoanResource extends Resource implements HasShieldPermissions
                 Section::make('Loan Terms')->schema([
                         Forms\Components\TextInput::make('principal')
                             ->numeric()
+                            ->live()
                             ->required()
                             ->prefix('KES')
                             ->afterStateUpdated(function (Set $set, Get $get)  {
                                 $set('applied_amount',$get('principal'));
                             }),
-                        Forms\Components\Select::make('chart_of_account_id')
+                        Forms\Components\Hidden::make('chart_of_account_id')
                             ->label('Fund Account')
-                            ->options(ChartOfAccount::all()->pluck('name', 'id'))
                             ->required(),
                         Forms\Components\TextInput::make('loan_term')
                             ->required()
@@ -241,16 +279,15 @@ class LoanResource extends Resource implements HasShieldPermissions
                             ->native(false)
                             ->required(),
                         Forms\Components\Select::make('loan_officer_id')
-                            ->label('Loan Officer')
-                            ->relationship('loan_officer','name',
-                                    modifyQueryUsing:  function (Builder $query) {
-                                        $tenantModel = Filament::getTenant();
-                                        $query->whereHas('branches', function (Builder $query) use ($tenantModel) {
-                                            $query->whereHas('users', function (Builder $query) use ($tenantModel) {
-                                                $query->where('branch_id', $tenantModel->id);
-                                            });
-                                        });
-                                    })
+                            ->label('Relationship Officer')
+                            ->options(function () {
+                                $tenantModel = Filament::getTenant();
+                                return User::whereHas('branches', function (Builder $query) use ($tenantModel) {
+                                    $query->whereHas('users', function (Builder $query) use ($tenantModel) {
+                                        $query->where('branch_id', $tenantModel->id);
+                                    });
+                                })->pluck('name', 'id');
+                            })
                             ->searchable()
                             ->preload()
                             ->required(),
@@ -267,9 +304,6 @@ class LoanResource extends Resource implements HasShieldPermissions
                             ->searchable()
                             ->preload()
                             ->required(),
-                        // Forms\Components\Select::make('charges')
-                        //     ->options(LoanCharge::all()->pluck('name', 'id'))
-                        //     ->multiple() ,
                         Forms\Components\Hidden::make('loan_transaction_processing_strategy_id'),
 
 
@@ -277,8 +311,7 @@ class LoanResource extends Resource implements HasShieldPermissions
                         Forms\Components\Hidden::make('submitted_on_date')
                             ->default(Carbon::now()),
 
-                        Forms\Components\Hidden::make('applied_amount')
-                        ,
+                       
                         Forms\Components\Hidden::make('instalment_multiple_of')
                             ->default(1),
                         Forms\Components\Hidden::make('interest_methodology'),
@@ -286,8 +319,328 @@ class LoanResource extends Resource implements HasShieldPermissions
                         Forms\Components\Hidden::make('auto_disburse'),
                         Forms\Components\Hidden::make('status')
                             ->default('pending'),
-                            ])
-            ]);
+                ]),
+            ];
+        }
+
+    public static function getGuarantorsInformation(): array
+    {
+        return [
+            Repeater::make('guarantors')
+            ->addActionLabel('Add Guarantor')
+            ->relationship('guarantors')
+                ->schema([
+                    Forms\Components\Select::make('is_previous')
+                    ->label('Previous Guarantor?')
+                    ->options([
+                        '1' => 'Yes',
+                        '0' => 'No',
+                    ])
+                    ->placeholder('Select')
+                    ->required()
+                    ->live()
+                    ->afterStateUpdated(fn (Select $component) => $component
+                        ->getContainer()
+                        ->getComponent('newGuarantor')
+                        ->getChildComponentContainer()
+                        ->fill()),
+
+                Grid::make(2)
+                        ->schema(fn (Forms\Get $get): array => match ($get('is_previous')) {
+                            '1' => [
+                                Select::make('client')
+                                ->label('Client Name')
+                                ->searchable()
+                                ->placeholder('Select Client')
+                                ->options(
+                                    LoanGuarantor::where('client_id', $get('client_id'))
+                                                ->get()
+                                                ->pluck('fullname', 'client_id')
+                                )
+                                ->live()
+                                ->reactive()
+                                ->afterStateUpdated(function (Set $set, Get $get)  {
+                                    $guarantorId = $get('client');
+                                    $guarantor = LoanGuarantor::where('client_id', $guarantorId)->latest()->first();
+                                    if($guarantor) {
+                                        $set('title_id', $guarantor->title_id);
+                                        $set('first_name', $guarantor->first_name);
+                                        $set('middle_name', $guarantor->middle_name);
+                                        $set('last_name', $guarantor->last_name);
+                                        $set('email', $guarantor->email);
+                                        $set('phone', $guarantor->phone);
+                                        $set('mobile', $guarantor->mobile);
+                                        $set('address', $guarantor->address);
+                                        $set('city', $guarantor->city);
+                                        $set('status', $guarantor->status);
+                                        $set('state', $guarantor->state);
+                                        $set('country_id', $guarantor->country_id);
+                                        $set('zip', $guarantor->zip);
+                                        $set('profession_id', $guarantor->profession_id);
+                                        $set('client_relationship_id', $guarantor->client_relationship_id);
+                                        $set('guaranteed_amount', $guarantor->guaranteed_amount);
+                                        $set('photo', $guarantor->photo);
+                                        $set('notes', $guarantor->notes);
+                                        $set('marital_status', $guarantor->marital_status);
+                                        $set('gender', $guarantor->gender);
+                                        $set('id_number', $guarantor->id_number);
+
+
+
+                                    }
+                                })
+                                ->required(),
+                                TextInput::make('guaranteed_amount')
+                                        ->numeric()
+                                        ->required()
+                                        ->prefix('KES'),
+                                    Select::make('client_relationship_id')
+                                        ->label('Relationship')
+                                        ->placeholder('Select Relationship')
+                                        ->options(
+                                            ClientRelationship::all()->pluck('name', 'id')
+                                        )
+                                        ->required(),
+                                    Hidden::make('created_by_id')
+                                         ->default(Auth::id()),
+                                    Hidden::make('first_name'),
+                                    Hidden::make('middle_name'),
+                                    Hidden::make('last_name'),
+                                    Hidden::make('gender'),
+                                    Hidden::make('status'),
+                                    Hidden::make('marital_status'),
+                                    Hidden::make('country_id'),
+                                    Hidden::make('title_id'),
+                                    Hidden::make('profession_id'),
+                                    Hidden::make('client_relationship_id'),
+                                    Hidden::make('mobile'),
+                                    Hidden::make('phone'),
+                                    Hidden::make('email'),
+                                    Hidden::make('id_number'),
+                                    Hidden::make('address'),
+                                    Hidden::make('city'),
+                                    Hidden::make('zip'),
+                                    Hidden::make('photo'),
+                                    Hidden::make('notes'),
+                                    ],
+
+                            '0' => [
+                                Forms\Components\Select::make('is_client')
+                                    ->label('Is Client')
+                                    ->options([
+                                        '1' => 'Yes',
+                                        '0' => 'No',
+                                    ])
+                                    ->placeholder('Select')
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(fn (Select $component) => $component
+                                        ->getContainer()
+                                        ->getComponent('dynamicTypeFields')
+                                        ->getChildComponentContainer()
+                                        ->fill()),
+                                        Grid::make(2)
+                                        ->schema(fn (Get $get): array => match ($get('is_client')) {
+                                            '1' => [
+                                                Select::make('client')
+                                                    ->label('Client Name')
+                                                    ->searchable()
+                                                    ->placeholder('Select Client')
+                                                    ->options(
+                                                        Client::where('status', 'active')
+                                                            ->whereNotIn('id', function ($query) {
+                                                                $query->select('client_id')
+                                                                    ->from('loan_guarantors');
+                                                            })
+                                                            ->get()
+                                                            ->pluck('fullname', 'id')
+                                                    )
+                                                    ->live()
+                                                    ->reactive()
+                                                    ->afterStateUpdated(function (Set $set, Get $get)  {
+                                                        $guarantor = Client::find($get('client'));
+                                                        if($guarantor) {
+                                                            $set('title_id', $guarantor->title_id);
+                                                            $set('first_name', $guarantor->first_name);
+                                                            $set('middle_name', $guarantor->middle_name);
+                                                            $set('last_name', $guarantor->last_name);
+                                                            $set('email', $guarantor->email);
+                                                            $set('phone', $guarantor->phone);
+                                                            $set('mobile', $guarantor->mobile);
+                                                            $set('address', $guarantor->address);
+                                                            $set('city', $guarantor->city);
+                                                            $set('status', $guarantor->status);
+                                                            $set('state', $guarantor->state);
+                                                            $set('country_id', $guarantor->country_id);
+                                                            $set('zip', $guarantor->zip);
+                                                            $set('profession_id', $guarantor->profession_id);
+                                                            $set('client_relationship_id', $guarantor->client_relationship_id);
+                                                            $set('guaranteed_amount', $guarantor->guaranteed_amount);
+                                                            $set('photo', $guarantor->photo);
+                                                            $set('notes', $guarantor->notes);
+                                                            $set('marital_status', $guarantor->marital_status);
+                                                            $set('gender', $guarantor->gender);
+                                                            $set('id_number', $guarantor->account_number);
+
+
+
+                                                        }
+                                                    })
+                                                    ->required(),
+                                                TextInput::make('guaranteed_amount')
+                                                    ->numeric()
+                                                    ->required()
+                                                    ->prefix('KES'),
+                                                Select::make('client_relationship_id')
+                                                    ->label('Relationship')
+                                                    ->placeholder('Select Relationship')
+                                                    ->options(
+                                                        ClientRelationship::all()->pluck('name', 'id')
+                                                    )
+                                                    ->required(),
+                                                 Hidden::make('created_by_id')
+                                                     ->default(Auth::id()),
+                                                Hidden::make('first_name'),
+                                                Hidden::make('middle_name'),
+                                                Hidden::make('last_name'),
+                                                Hidden::make('gender'),
+                                                Hidden::make('status'),
+                                                Hidden::make('marital_status'),
+                                                Hidden::make('country_id'),
+                                                Hidden::make('title_id'),
+                                                Hidden::make('profession_id'),
+                                                Hidden::make('client_relationship_id'),
+                                                Hidden::make('mobile'),
+                                                Hidden::make('phone'),
+                                                Hidden::make('email'),
+                                                Hidden::make('id_number'),
+                                                Hidden::make('address'),
+                                                Hidden::make('city'),
+                                                Hidden::make('zip'),
+                                                Hidden::make('photo'),
+                                                Hidden::make('notes'),
+                                            ],
+                                            '0' => [
+                                                Hidden::make('created_by_id')
+                                                        ->default(Auth::id()),
+                                                Hidden::make('loan_id'),
+                                                Select::make('client_relationship_id')
+                                                    ->label('Relationship')
+                                                    ->placeholder('Select Relationship')
+                                                    ->options(
+                                                        ClientRelationship::all()->pluck('name', 'id')
+                                                    )
+                                                    ->required(),
+                                                Select::make('title_id')
+                                                    ->required()
+                                                    ->placeholder('Select Title')
+                                                    ->relationship('title','name'),
+                                                TextInput::make('first_name')
+                                                    ->required()
+                                                    ->maxLength(255),
+                                                TextInput::make('middle_name')
+                                                    ->maxLength(255),
+                                                TextInput::make('last_name')
+                                                    ->required()
+                                                    ->maxLength(255),
+                                                select::make('gender')
+                                                    ->required()
+                                                    ->options(Gender::class),
+                                                Select::make('marital_status')
+                                                    ->options(MaritalStatus::class),
+                                                select::make('profession_id')
+                                                    ->label('Profession')
+                                                    ->placeholder('Select Profession')
+                                                    ->relationship('profession','name')
+                                                    ->required()
+                                                    ->preload()
+                                                    ->searchable(),
+                                                FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('mobile')
+                                                    ->label('Mobile')
+                                                    ->region('KE')
+                                                    ->displayFormat(PhoneNumberFormat::E164)
+                                                    ->databaseFormat(PhoneNumberFormat::INTERNATIONAL)
+                                                    ->mask('9999999999')
+                                                    ->required(),
+                                                TextInput::make('email')
+                                                    ->email()
+                                                    ->maxLength(255),
+                                                TextInput::make('id_number')
+                                                    ->numeric()
+                                                    ->required()
+                                                    //->unique(ignoreRecord: true)
+                                                    ->maxLength(255),
+                                                Textarea::make('address')
+                                                    ->maxLength(65535),
+                                                TextInput::make('city')
+                                                    ->maxLength(255),
+                                                TextInput::make('state')
+                                                    ->maxLength(255),
+                                                FileUpload::make('photo')
+                                                    ,
+                                                TextInput::make('guaranteed_amount')
+                                                    ->numeric()
+                                                    ->required()
+                                                    ->prefix('KES'),
+                                                Textarea::make('notes')
+                                                    ->maxLength(65535)
+                                                    ->columnSpanFull(),
+                                            ],
+                                            default => [],
+                                        })
+                                        ->key('dynamicTypeFields'),
+                            ],
+                            default => [],
+                            })
+                            ->key('newGuarantor'),
+                        ]),
+        ];
+    }
+
+    public static function getCollateralInformation(): array
+    {
+        return [
+            Repeater::make('collaterals')
+            ->addActionLabel('Add Collateral')
+            ->itemLabel(fn (array $state): ?string => $state['description'] ?? null)
+            ->columns(3)
+            ->relationship('collateral')
+                ->schema([
+                    Forms\Components\Hidden::make('created_by_id')
+                    ->default(Auth::id()),
+                Forms\Components\Select::make('loan_collateral_type_id')
+                    ->relationship('collateral_type', 'name'),
+                Forms\Components\TextInput::make('value')
+                    ->required()
+                    ->numeric(),
+                Forms\Components\Textarea::make('description'),
+                Forms\Components\FileUpload::make('file')
+                    ->required(),
+                Forms\Components\Select::make('status')
+                    ->options(CollateralStatus::class)
+                    ->default('active'),
+                ]),
+        ];
+    }
+    public static function getFilesInformation(): array
+    {
+        return [
+            Repeater::make('file')
+            ->addActionLabel('Add File')
+            ->relationship('files')
+            ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
+            ->columns(3)
+                ->schema([
+                Forms\Components\Hidden::make('created_by_id')
+                    ->default(Auth::id()),
+                Forms\Components\TextInput::make('name')
+                    ->required()
+                    ->placeholder('Enter Title Name'),
+                Forms\Components\TextInput::make('description'),
+                Forms\Components\FileUpload::make('file')
+                    ->required(),
+                ]),
+        ];
     }
 
     public static function table(Table $table): Table
@@ -304,6 +657,7 @@ class LoanResource extends Resource implements HasShieldPermissions
                     ->label('Loan Account No')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('loan_officer.full_name')
+                    ->label('Relationship Officer')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('client.full_name')
                     ->sortable()
@@ -408,7 +762,7 @@ class LoanResource extends Resource implements HasShieldPermissions
                                 ->options(LoanStatus::class)
                                 ->searchable(),
                 SelectFilter::make('loan_officer_id')
-                                ->label('Loan Officer')
+                                ->label('Relationship Officer')
                                 ->options(User::whereNotNull('first_name')->pluck(DB::raw("CONCAT(first_name, ' ', last_name)"), 'id'))
                                 ->searchable(),
                 DateRangeFilter::make('disbursed_on_date')
@@ -985,7 +1339,6 @@ class LoanResource extends Resource implements HasShieldPermissions
             'create' => Pages\CreateLoan::route('/create'),
             'edit' => Pages\EditLoan::route('/{record}/edit'),
             'view' => Pages\ViewLoan::route('/{record}'),
-            'list_pending' => Pages\ListPendingLoans::route('/pending'),
         ];
     }
 

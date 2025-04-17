@@ -57,6 +57,20 @@ class LoanGuarantor extends Model
     ];
 
 
+    protected static function booted()
+    {
+        static::creating(function ($guarantor) {
+            // If client field is set (from the form) and client_id is not set
+            if (request()->has('client') && !$guarantor->client_id) {
+                $guarantor->client_id = request()->input('client');
+            }
+            
+            // If loan_id is not set but we're in a relationship context
+            if (!$guarantor->loan_id && request()->route('record')) {
+                $guarantor->loan_id = request()->route('record');
+            }
+        });
+    }
     public function getFullNameAttribute()
     {
         return $this->first_name . ' ' . $this->middle_name . ' ' . $this->last_name;
@@ -67,69 +81,6 @@ class LoanGuarantor extends Model
         return $this->belongsTo(Title::class);
     }
 
-    public static function getForm(){
-        return [
-                Hidden::make('created_by_id')
-                         ->default(Auth::id()),
-                Hidden::make('loan_id'),
-                Select::make('client_relationship_id')
-                    ->label('Relationship')
-                    ->placeholder('Select Relationship')
-                    ->options(
-                        ClientRelationship::all()->pluck('name', 'id')
-                    )
-                    ->required(),
-                Select::make('title_id')
-                    ->placeholder('Select Title')
-                    ->relationship('title','name'),
-                TextInput::make('first_name')
-                    ->required()
-                    ->maxLength(255),
-                TextInput::make('middle_name')
-                    ->maxLength(255),
-                TextInput::make('last_name')
-                    ->required()
-                    ->maxLength(255),
-                select::make('gender')
-                    ->required()
-                    ->options(Gender::class),
-                Select::make('marital_status')
-                    ->options(MaritalStatus::class),
-                select::make('profession_id')
-                    ->label('Profession')
-                    ->options(Profession::all()->pluck('name', 'id'))
-                    ->searchable(),
-                TextInput::make('mobile')
-                    ->required()
-                    ->tel()
-                    ->maxLength(255),
-                TextInput::make('email')
-                    ->email()
-                    ->maxLength(255),
-                DatePicker::make('dob')
-                     ->required()
-                    ->native(false),
-                Textarea::make('address')
-                    ->maxLength(65535),
-                TextInput::make('city')
-                    ->maxLength(255),
-                TextInput::make('state')
-                    ->maxLength(255),
-                FileUpload::make('photo')
-                    ->image()
-                    ->avatar()
-                    ->imageEditor()
-                    ->circleCropper()
-                    ->columnSpanFull(),
-                TextInput::make('guaranteed_amount')
-                    ->numeric()
-                    ->required()
-                    ->prefix(Currency::where('is_default', 1)->first()->symbol),
-                Textarea::make('notes')
-                    ->maxLength(65535)
-                    ->columnSpanFull(),
-        ];
-    }
     public function created_by()
     {
         return $this->hasOne(User::class, 'id', 'created_by_id');

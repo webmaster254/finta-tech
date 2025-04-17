@@ -18,6 +18,14 @@ class EditLoan extends EditRecord
             ->body('The Loan has been saved successfully.');
     } 
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        //check if status is submitted and update to pending
+        if($this->getRecord()->status == 'submitted') {
+            $data['status'] = 'pending';
+        }
+        return $data;
+    }
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');

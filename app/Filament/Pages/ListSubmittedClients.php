@@ -37,6 +37,7 @@ class ListSubmittedClients extends Page implements HasTable
 
     protected static ?string $navigationLabel = 'Client Maintenance';
     protected static ?string $navigationGroup = 'Clients Management';
+    protected  ?string $heading = 'Submitted Clients';
     protected static ?int $navigationSort = 1; 
     
     use InteractsWithTable;
@@ -65,7 +66,7 @@ class ListSubmittedClients extends Page implements HasTable
                 TextColumn::make('full_name'),
                 TextColumn::make('mobile'),
                 TextColumn::make('loan_officer.fullname')
-                ->label('Loan Officer'),
+                ->label('Relationship Officer'),
                 TextColumn::make('status')
                 ->badge()
                 ->label('Status'),

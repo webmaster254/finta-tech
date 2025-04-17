@@ -19,6 +19,15 @@ class EditClient extends EditRecord
         ];
     }
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        //check if status is submitted and update to pending
+        if($this->getRecord()->status == 'submitted') {
+            $data['status'] = 'pending';
+        }
+        return $data;
+    }
+
     protected function getUpdatedNotificationTitle(): ?string
     {
         return 'Client Updated successfully';

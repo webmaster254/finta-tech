@@ -145,13 +145,34 @@ class BusinessResource extends Resource
                 ->maxLength(255),
             Forms\Components\TextInput::make('mitigations')
                 ->maxLength(255),
+            Forms\Components\Select::make('insurance_service')
+                ->options([
+                    'yes' => 'Yes',
+                    'no' => 'No',
+                ])
+                ->required(),
             Forms\Components\TextInput::make('insurance')
-                ->maxLength(255),
-            Forms\Components\FileUpload::make('trading_license'),
-            Forms\Components\FileUpload::make('business_permit'),
-            Forms\Components\FileUpload::make('certificate_of_incorporation'),
-            Forms\Components\FileUpload::make('health_certificate'),
+                ->label('Insurance Ref Number')
+                ->visible(function (Forms\Get $get) {
+                    return $get('insurance_service') === 'yes';
+                })
+                ->required(),
+            Forms\Components\FileUpload::make('insurance_document')
+                ->label('Insurance Document')
+                ->visible(function (Forms\Get $get) {
+                    return $get('insurance_service') === 'yes';
+                })
+                ->required(),
+            Forms\Components\FileUpload::make('trading_license')
+                ->label('Trading License'),
+            Forms\Components\FileUpload::make('business_permit')
+                ->label('Business Permit'),
+            Forms\Components\FileUpload::make('certificate_of_incorporation')
+                ->label('Certificate of Incorporation'),
+            Forms\Components\FileUpload::make('health_certificate')
+                ->label('Health Certificate'),
             Forms\Components\TextInput::make('registration_number')
+                ->label('Registration Number')
                 ->maxLength(255),
             Forms\Components\Select::make('record_maintained')
                 ->options([
@@ -488,50 +509,69 @@ class BusinessResource extends Resource
                 Split::make([
                 infolistfieldset::make('Business Information')
                     ->schema([
+                        TextEntry::make('client.account_number')
+                            ->label('Client Account Number')
+                            ->color('info'),
                         TextEntry::make('name')
-                    ->label('Business Name')
-                    ->color('info'),
-                TextEntry::make('business_type')
-                    ->label('Business Type')
-                    ->color('info'),
-                TextEntry::make('industry')
-                    ->label('Industry')
-                    ->color('info'),
-                TextEntry::make('location')
-                    ->label('Location')
-                    ->color('info'),
-                TextEntry::make('ownership')
-                    ->label('Ownership')
-                    ->color('info'),
-                TextEntry::make('premise_ownership')
-                    ->label('Premise Ownership')
-                    ->color('info'),
-                TextEntry::make('employees')
-                    ->label('Employees')
-                    ->color('info'),
-                TextEntry::make('sector')
-                    ->label('Sector')
-                    ->color('info'),
-                TextEntry::make('status')
-                    ->label('Status')
-                    ->color('info'),
-                TextEntry::make('registration_number')
-                    ->label('Registration Number')
-                    ->color('info'),
-                TextEntry::make('establishment_date')
-                    ->label('Establishment Date')
-                    ->color('info'),
-                TextEntry::make('establishment_date')
-                    ->label('Business Age')
-                    ->since()
-                    ->color('info'),
-                TextEntry::make('insurance')
-                    ->label('Insurance')
-                    ->color('info'),
-                TextEntry::make('record_maintained')
-                    ->label('Record Maintained')
-                    ->color('info'),
-                ])->columns(3),
+                            ->label('Business Name')
+                            ->color('info'),
+                        TextEntry::make('business_type')
+                            ->label('Business Type')
+                            ->color('info'),
+                        TextEntry::make('industry')
+                            ->label('Industry')
+                            ->color('info'),
+                        TextEntry::make('location')
+                            ->label('Location')
+                            ->color('info'),
+                        TextEntry::make('ownership')
+                            ->label('Ownership')
+                            ->color('info'),
+                        TextEntry::make('premise_ownership')
+                            ->label('Premise Ownership')
+                            ->color('info'),
+                        TextEntry::make('employees')
+                            ->label('Employees')
+                            ->color('info'),
+                        TextEntry::make('sector')
+                            ->label('Sector')
+                            ->color('info'),
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->color('info'),
+                        TextEntry::make('registration_number')
+                            ->label('Registration Number')
+                            ->color('info'),
+                        TextEntry::make('establishment_date')
+                            ->label('Establishment Date')
+                            ->color('info'),
+                        TextEntry::make('establishment_date')
+                            ->label('Business Age')
+                            ->formatStateUsing(function ($state): string {
+                                if (is_string($state)) {
+                                    $date = \Carbon\Carbon::parse($state);
+                        } else {
+                            $date = $state;
+                        }
+                        return $date->age . ' years';
+                    })
+                            ->color('info'),
+                        TextEntry::make('insurance')
+                            ->label('Insurance')
+                            ->color('info'),
+                        TextEntry::make('record_maintained')
+                            ->label('Record Maintained')
+                            ->color('info'),
+                        TextEntry::make('assessed_by.full_name')
+                            ->label('Assessed By')
+                            ->color('info'),
+                        TextEntry::make('assessed_date')
+                            ->label('Assessed Date')
+                            ->color('info'),
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->color('info'),
+                    ])->columns(3),
                 ]),
                 Split::make([
                     infolistfieldset::make('More Business Information')

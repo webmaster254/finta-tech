@@ -9,13 +9,29 @@ use App\Models\Loan\LoanLinkedCharge;
 use App\Filament\Resources\LoanResource;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Forms\Components\Wizard\Step;
 
 class CreateLoan extends CreateRecord
 {
+    use CreateRecord\Concerns\HasWizard;
     protected static string $resource = LoanResource::class;
     protected function getCreatedNotificationTitle(): ?string
     {
         return 'Loan Created successfully';
+    }
+
+    protected function getSteps(): array
+    {
+        return [
+            Step::make('Loan Details')
+                ->schema(LoanResource::getLoanInformation()),
+            Step::make('Guarantors')
+                ->schema(LoanResource::getGuarantorsInformation()),
+            Step::make('Collateral')
+                ->schema(LoanResource::getCollateralInformation()),
+            Step::make('Files')
+                ->schema(LoanResource::getFilesInformation()),
+        ];
     }
 
     protected function getRedirectUrl(): string
@@ -25,18 +41,19 @@ class CreateLoan extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
 {
-    $loanProduct = LoanProduct::find($data['loan_product_id']);
-    if ($loanProduct->maximum_principal < $data['principal']) {
-        Notification::make()
-            ->warning()
-            ->title('The principal Amount cannot be greater than the maximum principal for this loan product')
-            ->body('Enter a value less than or equal to '.$loanProduct->maximum_principal)
-            ->persistent()
+    // $loanProduct = LoanProduct::find($data['loan_product_id']);
+    // if ($loanProduct->maximum_principal < $data['principal']) {
+    //     Notification::make()
+    //         ->warning()
+    //         ->title('The principal Amount cannot be greater than the maximum principal for this loan product')
+    //         ->body('Enter a value less than or equal to '.$loanProduct->maximum_principal)
+    //         ->persistent()
 
-            ->send();
+    //         ->send();
 
-        $this->halt();
-    }
+    //     $this->halt();
+    // }
+    $data['applied_amount'] = $data['principal'];
 
     return $data;
 }

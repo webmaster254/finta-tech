@@ -42,6 +42,7 @@ class Business extends Model
         'threats',
         'mitigations',
         'insurance',
+        'insurance_document',
         'trading_license',
         'business_permit',
         'certificate_of_incorporation',
@@ -92,7 +93,7 @@ class Business extends Model
 
     public function assessed_by(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'assessed_by');
     }
 
     public function business_overview()

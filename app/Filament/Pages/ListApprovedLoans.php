@@ -34,6 +34,7 @@ class ListApprovedLoans extends Page implements HasTable
 
     protected static ?string $navigationGroup = 'Loans Management';
     protected static ?string $navigationLabel = 'Disburse loans';
+    protected  ?string $heading = 'Approved Loans';
     protected static ?int $navigationSort = 3;
 
     public static function getNavigationBadge(): ?string

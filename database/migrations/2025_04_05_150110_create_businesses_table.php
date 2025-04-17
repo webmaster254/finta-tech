@@ -35,6 +35,7 @@ return new class extends Migration
             $table->string('threats')->nullable();
             $table->string('mitigations')->nullable();
             $table->string('insurance')->nullable();
+            $table->string('insurance_document')->nullable();
             $table->string('trading_license')->nullable();
             $table->string('business_permit')->nullable();
             $table->string('certificate_of_incorporation')->nullable();

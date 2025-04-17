@@ -43,7 +43,7 @@ class Loan extends Model
 
     protected $casts = [
         'status' => LoanStatus::class,
-        'applied_amount' => MoneyCast::class,
+        //'applied_amount' => MoneyCast::class,
        ];
 
        protected $fillable = [
@@ -224,13 +224,13 @@ public function charges()
 
        public function loan_officer()
        {
-           return $this->hasOne(User::class, 'id', 'loan_officer_id');
+           return $this->belongsTo(User::class, 'loan_officer_id');
        }
 
        public function loan_purpose()
-       {
-           return $this->belongsTo(LoanPurpose::class, 'id', 'loan_purpose_id');
-       }
+        {
+            return $this->belongsTo(LoanPurpose::class, 'loan_purpose_id');
+        }
 
        public function fund()
        {
