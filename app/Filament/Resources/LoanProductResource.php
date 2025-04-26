@@ -63,10 +63,10 @@ class LoanProductResource extends Resource
                     ->label('Decimals')
                     ->default(0)
                     ->numeric(),
-                Forms\Components\Select::make('fund_id')
-                        ->options(ChartOfAccount::where('category', 'asset')->get()->pluck('name', 'id'))
-                        ->preload()
-                        ->searchable(),
+                // Forms\Components\Select::make('fund_id')
+                //         ->options(ChartOfAccount::where('category', 'asset')->get()->pluck('name', 'id'))
+                //         ->preload()
+                //         ->searchable(),
                 Forms\Components\Select::make('currency_id')
                         ->relationship('currency', 'name')
                         ->preload()
@@ -177,51 +177,47 @@ class LoanProductResource extends Resource
                                         ->required(),
                                     Forms\Components\Select::make('loan_portfolio_chart_of_account_id')
                                         ->label('Loan Portfolio')
+                                        ->options(ChartOfAccount::where('category', 'asset')->get()->pluck('name', 'id'))
+                                        ->required(),
+                                    Forms\Components\Select::make('administration_fees_chart_of_account_id')
+                                        ->label('Administration Fees')
+                                        ->options(ChartOfAccount::where('category', 'revenue')->get()->pluck('name', 'id'))
+                                        ->required(),
+                                    Forms\Components\Select::make('insurance_chart_of_account_id')
+                                        ->label('Insurance')
                                         ->options(ChartOfAccount::where('category', 'liability')->get()->pluck('name', 'id'))
                                         ->required(),
-                                    Forms\Components\Select::make('interest_receivable_chart_of_account_id')
-                                        ->label('Interest Receivable')
-                                        ->options(ChartOfAccount::where('category', 'revenue')->get()->pluck('name', 'id'))
-                                        ->required(),
-                                    Forms\Components\Select::make('penalties_receivable_chart_of_account_id')
-                                        ->label('Penalties Receivable')
-                                        ->options(ChartOfAccount::where('category', 'revenue')->get()->pluck('name', 'id'))
-                                        ->required(),
-                                    Forms\Components\Select::make('fees_receivable_chart_of_account_id')
-                                        ->label('Fees Receivable')
-                                        ->options(ChartOfAccount::where('category', 'revenue')->get()->pluck('name', 'id'))
-                                        ->required(),
-                                    Forms\Components\Select::make('overpayments_chart_of_account_id')
-                                        ->label('Overpayments')
+                                    Forms\Components\Select::make('interest_due_chart_of_account_id')
+                                        ->label('Interest Due')
                                         ->options(ChartOfAccount::where('category', 'liability')->get()->pluck('name', 'id'))
                                         ->required(),
-                                    Forms\Components\Select::make('suspended_income_chart_of_account_id')
-                                        ->label('Suspended Income')
-                                        ->options(ChartOfAccount::where('category', 'liability')->get()->pluck('name', 'id'))
-                                        ->required(),
-                                    Forms\Components\Select::make('income_from_interest_chart_of_account_id')
-                                        ->label('Income from Interest')
+                                    Forms\Components\Select::make('interest_paid_chart_of_account_id')
+                                        ->label('Interest Paid')
                                         ->options(ChartOfAccount::where('category', 'revenue')->get()->pluck('name', 'id'))
                                         ->required(),
-                                    Forms\Components\Select::make('income_from_penalties_chart_of_account_id')
-                                        ->label('Income from Penalties')
+                                    Forms\Components\Select::make('sms_charges_chart_of_account_id')
+                                        ->label('SMS Charges')
                                         ->options(ChartOfAccount::where('category', 'revenue')->get()->pluck('name', 'id'))
                                         ->required(),
-                                    Forms\Components\Select::make('income_from_fees_chart_of_account_id')
-                                        ->label('Income from Fees')
+                                    Forms\Components\Select::make('loan_extension_fees_chart_of_account_id')
+                                        ->label('Loan Extension Fees')
                                         ->options(ChartOfAccount::where('category', 'revenue')->get()->pluck('name', 'id'))
                                         ->required(),
-                                    Forms\Components\Select::make('income_from_recovery_chart_of_account_id')
-                                        ->label('Income from Recovery')
+                                    Forms\Components\Select::make('penalties_chart_of_account_id')
+                                        ->label('Penalties')
                                         ->options(ChartOfAccount::where('category', 'revenue')->get()->pluck('name', 'id'))
                                         ->required(),
-                                    Forms\Components\Select::make('losses_written_off_chart_of_account_id')
-                                        ->label('Losses Written Off')
-                                        ->options(ChartOfAccount::where('category', 'liability')->get()->pluck('name', 'id'))
+                                    Forms\Components\Select::make('bad_debts_provision_chart_of_account_id')
+                                        ->label('Bad Debts Provision')
+                                        ->options(ChartOfAccount::where('category', 'expense')->get()->pluck('name', 'id'))
                                         ->required(),
-                                    Forms\Components\Select::make('interest_written_off_chart_of_account_id')
-                                        ->label('Interest Written Off')
-                                        ->options(ChartOfAccount::where('category', 'liability')->get()->pluck('name', 'id'))
+                                    Forms\Components\Select::make('write_offs_chart_of_account_id')
+                                        ->label('Write offs')
+                                        ->options(ChartOfAccount::where('category', 'expense')->get()->pluck('name', 'id'))
+                                        ->required(),
+                                    Forms\Components\Select::make('recovered_written_off_chart_of_account_id')
+                                        ->label('Recovered Written Off')
+                                        ->options(ChartOfAccount::where('category', 'revenue')->get()->pluck('name', 'id'))
                                         ->required(),
                                     Forms\Components\Toggle::make('auto_disburse')
                                         ->label('Auto Disburse')
