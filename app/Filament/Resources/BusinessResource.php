@@ -625,6 +625,29 @@ class BusinessResource extends Resource
                
             ]);
     }
+    private static function updateGrossProfit(Forms\Get $get, Forms\Set $set):void
+    {
+        $set('gross_profit', $get('average_weekly_sales') - $get('cost_of_sales'));
+    }
+
+    private static function updateHouseholdExpense(Forms\Get $get, Forms\Set $set):void
+    {
+        $set('hs_total', $get('house_rent') + $get('hs_electricity') + $get('hs_food') + $get('hs_transport') + $get('clothings') + $get('school_fees'));
+    }
+
+    private static function updateBusinessExpense(Forms\Get $get, Forms\Set $set):void
+    {
+        $set('bs_total', $get('bs_rent') + $get('bs_electricity') + $get('bs_license') + $get('bs_transport') + $get('bs_wages') + $get('bs_contributions') + $get('bs_loan_repayment') + $get('bs_other_drawings') + $get('bs_spoilts_goods') + $get('owner_salary'));
+    }
+
+    private static function updateCostOfSales(Forms\Get $get, Forms\Set $set):void
+    {
+        $set('cost_of_sales',$get('current_stock') + $get('average_weekly_purchase') - $get('average_weekly_stock_balance')  );
+    }
+   private static function updateNetProfit(Forms\Get $get, Forms\Set $set):void
+    {
+        $set('net_profit', $get('gross_profit') - $get('bs_total') - $get('hs_total'));
+    }
 
     public static function getRelations(): array
     {

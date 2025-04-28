@@ -596,12 +596,12 @@ class ApproveClient extends Page implements HasTable
                                 ->disabled()
                                 ->required(),
                                 Toggle::make('address_verified')
-                                ->label('Address Verified?')
+                                ->label('Address Confirmed?')
                                 ->accepted()
                                 ->disabled()
                                 ->required(),
                                 Toggle::make('signature_confirmed')
-                                ->label('Client Signature Confirmed?')
+                                ->label('Client Signature Verified?')
                                 ->accepted()
                                 ->disabled()
                                 ->required(),

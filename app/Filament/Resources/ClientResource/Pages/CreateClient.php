@@ -58,6 +58,8 @@ class CreateClient extends CreateRecord
                 ->schema(ClientResource::getRefereesInformation()),
             Step::make('Client Lead')
                 ->schema(ClientResource::getClientLead()),
+                Step::make('Privacy Policy')
+                ->schema(ClientResource::getPrivacyPolicyInformation()),
             Step::make('Admin Details')
                 ->schema(ClientResource::getAdminInformation()),
             // Step::make('Summary')
