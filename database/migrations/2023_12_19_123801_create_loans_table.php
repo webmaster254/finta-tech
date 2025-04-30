@@ -115,6 +115,7 @@ return new class extends Migration
             $table->decimal('total_written_off_derived', 65, 2)->default(0.00);
             $table->decimal('total_waived_derived', 65, 2)->default(0.00);
             $table->decimal('total_outstanding_derived', 65, 2)->default(0.00);
+            $table->text('rts_reason')->nullable();
             $table->index('client_id');
             $table->index('loan_officer_id');
             $table->index('loan_product_id');

@@ -142,6 +142,7 @@ class Loan extends Model
            'total_written_off_derived',
            'total_waived_derived',
            'total_outstanding_derived',
+           'rts_reason',
 
        ];
        public $table = "loans";
@@ -551,7 +552,7 @@ public function charges()
         $this->update([
             'status' => 'approved',
             'approved_amount' => $data['approved_amount'],
-            'approved_notes' => $data['approved_notes'],
+            //'approved_notes' => $data['approved_notes'],
             'approved_by_user_id' => Auth::id(),
             'approved_on_date' => $data['approved_on_date'],
             ]);

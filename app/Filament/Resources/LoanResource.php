@@ -259,24 +259,31 @@ class LoanResource extends Resource implements HasShieldPermissions
                             ->required(),
                         Forms\Components\TextInput::make('loan_term')
                             ->required()
+                            ->readOnly()
                             ->numeric(),
                         Forms\Components\TextInput::make('repayment_frequency')
                             ->required()
+                            ->readOnly()
                             ->numeric(),
                         Forms\Components\TextInput::make('repayment_frequency_type')
                             ->required()
+                            ->readOnly()
                             ->maxLength(255),
                         Forms\Components\TextInput::make('interest_rate')
                             ->required()
+                            ->readOnly()
                             ->numeric(),
                         Forms\Components\TextInput::make('interest_rate_type')
                             ->required()
+                            ->readOnly()
                             ->maxLength(255),
                         Forms\Components\DatePicker::make('expected_disbursement_date')
                             ->native(false)
+                            ->default(Carbon::now())
                             ->required(),
                         Forms\Components\DatePicker::make('expected_first_payment_date')
                             ->native(false)
+                            ->default(Carbon::now()->addDay())//add 1 day
                             ->required(),
                         Forms\Components\Select::make('loan_officer_id')
                             ->label('Relationship Officer')

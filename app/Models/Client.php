@@ -78,6 +78,7 @@ class Client extends Model implements HasName, HasAvatar
         'address_verified',
         'signature_confirmed',
         'referees_contacted',
+        'rts_remarks',
     ];
 
    protected $casts = [
@@ -287,7 +288,7 @@ public function next_of_kins(): HasMany
         // If client is active and doesn't have an account yet, create one
         if ($status === 'active' && !$this->account()->exists()) {
             $this->update([
-                'suggested_loan_limit' => 100000
+                'suggested_loan_limit' => 0
             ]);
             $this->createOrdinaryAccount();
         }

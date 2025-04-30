@@ -20,6 +20,7 @@
         "bezhansalleh/filament-exceptions": "^2.1",
         "bezhansalleh/filament-shield": "^3.2",
         "bytexr/filament-queueable-bulk-actions": "^0.2.3",
+        "cheesegrits/filament-google-maps": "^3.0",
         "cheesegrits/filament-phone-numbers": "^1.0",
         "croustibat/filament-jobs-monitor": "^2.4",
         "diogogpinto/filament-auth-ui-enhancer": "^1.0",

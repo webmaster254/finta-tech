@@ -15,6 +15,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Forms\Components\TextInput;
@@ -619,13 +620,21 @@ class ApproveClient extends Page implements HasTable
                     Action::make('rts')
                     ->label('RTS')
                     ->icon('heroicon-o-arrow-uturn-left')
-                    ->action(function (Client $record) {
-                        $record->changeStatus('pending');
-                        // Notification::make()
-                        //             ->success()
-                        //             ->title('Client Disapproved')
-                        //             ->body('The client has been disapproved successfully.')
-                        //             ->send();
+                    ->form([
+                        Textarea::make('rts_remarks')
+                            ->label('Remarks')
+                            ->required(),
+                    ])
+                    ->action(function (Client $record, array $data) {
+                        $record->changeStatus('rts');
+                       $record->update([
+                            'rts_remarks' => $data['rts_remarks']
+                        ]);
+                        Notification::make()
+                                    ->success()
+                                    ->title('Client RTS')
+                                    ->body('The client has been RTS successfully.')
+                                    ->send();
                     })
                     ->color('warning')
                     ->requiresConfirmation(),

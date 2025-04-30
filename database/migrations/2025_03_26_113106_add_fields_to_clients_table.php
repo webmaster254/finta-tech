@@ -33,6 +33,7 @@ return new class extends Migration
             $table->boolean('address_verified')->default(false);
             $table->boolean('signature_confirmed')->default(false);
             $table->boolean('referees_contacted')->default(false);
+            $table->string('rts_remarks')->nullable();
             $table->json('client_lead')->nullable();
             $table->foreignId('existing_client')->constrained('clients')->null();
         });
@@ -64,6 +65,7 @@ return new class extends Migration
                 'address_verified',
                 'signature_confirmed',
                 'referees_contacted',
+                'rts_remarks',
                 'client_lead',
                 'existing_client',
             ]);

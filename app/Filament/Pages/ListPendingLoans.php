@@ -2,20 +2,24 @@
 
 namespace App\Filament\Pages;
 
+use Carbon\Carbon;
 use Filament\Pages\Page;
 use App\Models\Loan\Loan;
 use Filament\Tables\Table;
 use App\Events\LoanDisbursed;
 use Filament\Tables\Actions\Action;
 use Filament\Support\Enums\MaxWidth;
+use Illuminate\Support\Facades\Auth;
 use App\Filament\Exports\LoanExporter;
 use App\Filament\Imports\LoanImporter;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Tables\Actions\ActionGroup;
+use Filament\Forms\Components\FileUpload;
 use Filament\Tables\Actions\ExportAction;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Wizard\Step;
@@ -253,7 +257,7 @@ class ListPendingLoans extends Page implements HasTable
                                                         TextInput::make('value')
                                                                 ->label('Value')
                                                                 ->required(),
-                                                        CuratorPicker::make('file')
+                                                        FileUpload::make('file')
                                                                 ->label('File')
                                                                 ->required(),
                                                 ])
@@ -290,9 +294,21 @@ class ListPendingLoans extends Page implements HasTable
                     ->icon('heroicon-o-arrow-uturn-left')
                     ->color('warning')
                     ->requiresConfirmation()
+                    ->modalHeading('RTS Loan')
+                    ->modalDescription('Are you sure you want to RTS this loan?')
+                    ->form([
+                        Textarea::make('rts_reason')
+                            ->label('Reason for RTS')
+                            ->required(),
+                    ])
                     ->action(function (Loan $record) {
-                        $record->status = 'submitted';
+                        $record->status = 'rts';
                         $record->save();
+                        Notification::make()
+                            ->title('Loan RTSed Successfully')
+                            ->success()
+                            ->body('The Loan has been RTSed successfully.')
+                            ->send();
                     }),
                 ]),
             ]);

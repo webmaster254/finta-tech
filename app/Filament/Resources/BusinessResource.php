@@ -43,18 +43,132 @@ class BusinessResource extends Resource
     public static function form(Form $form): Form
 {
     return $form
+        ->columns(3)
         ->schema([
-            Wizard::make()
-            ->columnSpanFull()
-                ->schema([
-                    Wizard\Step::make('General Business Information')
-                        ->description('Enter business information')
-                        ->schema(self::getGeneralBusinessInformation()),
-                    Wizard\Step::make('Business overview Information')
-                        ->description('Enter business overview information')
-                        ->schema(self::getBusinessOverviewInformation()),
-                    
+            Card::make()
+            ->columns(3)
+            ->schema([
+                Forms\Components\Hidden::make('status')
+                ->default('pending'),
+            Forms\Components\Select::make('client_id')
+            ->live(onBlur: true)
+            ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, ?int $state) {
+                $client = Client::find($state);
+                $set('client_name', $client->full_name);
+            })
+            ->options(Client::where('source_of_income', 'Business')->get()->mapWithKeys(function ($client) {
+                return [$client->id => $client->account_number];
+                }))
+                ->label('Client')
+                ->required(),
+            Forms\Components\TextInput::make('client_name')
+                ->label('Client Name')
+                ->disabled(),
+
+                
+            Forms\Components\TextInput::make('name')
+                ->label('Business Name')
+                ->required()
+                ->maxLength(255),
+            Forms\Components\Select::make('business_type')
+                ->options(BusinessType::class)
+                ->required(),
+            Forms\Components\TextInput::make('description')
+                ->maxLength(255),
+            Forms\Components\Select::make('industry')
+                ->options(Industry::class)
+                ->required(),
+            Forms\Components\DatePicker::make('establishment_date')
+                ->native(false)
+                ->required()
+                ->before(now())
+                ->maxDate(now()->subMonths(6))
+                ->rule(function () {
+                    return function (string $attribute, $value, \Closure $fail) {
+                        $date = \Carbon\Carbon::parse($value);
+                        if ($date->isAfter(now()->subMonths(6))) {
+                            $fail("The business must be at least 6 months old.");
+                        }
+                    };
+                })
+                ->helperText('Business must be at least 6 months old'),
+            Forms\Components\TextInput::make('location')
+                ->maxLength(255),
+            Forms\Components\Select::make('ownership')
+                ->options(Ownership::class)
+                ->required(),
+            Forms\Components\Select::make('premise_ownership')
+                ->options([
+                    'owned' => 'Owned',
+                    'rented' => 'Rented',
+                    'leased' => 'Leased',
                 ])
+                ->required(),
+            Forms\Components\TextInput::make('employees')
+                ->numeric()
+                ->required(),
+            Forms\Components\Select::make('sector')
+                ->options([
+                    'msme' => 'MSME',
+                    'sme' => 'SME',
+                ])
+                ->required(),
+            Forms\Components\TextInput::make('major_products')
+                ->maxLength(255),
+            Forms\Components\TextInput::make('major_suppliers')
+                ->maxLength(255),
+            Forms\Components\TextInput::make('major_customers')
+                ->maxLength(255),
+            Forms\Components\TextInput::make('major_competitors')
+                ->maxLength(255),
+            Forms\Components\TextInput::make('strengths')
+                ->maxLength(255),
+            Forms\Components\TextInput::make('weaknesses')
+                ->maxLength(255),
+            Forms\Components\TextInput::make('opportunities')
+                ->maxLength(255),
+            Forms\Components\TextInput::make('threats')
+                ->maxLength(255),
+            Forms\Components\TextInput::make('mitigations')
+                ->maxLength(255),
+            Forms\Components\Select::make('insurance_service')
+                ->options([
+                    'yes' => 'Yes',
+                    'no' => 'No',
+                ])
+                ->required(),
+            Forms\Components\TextInput::make('insurance')
+                ->label('Insurance Ref Number')
+                ->visible(function (Forms\Get $get) {
+                    return $get('insurance_service') === 'yes';
+                })
+                ->required(),
+            Forms\Components\FileUpload::make('insurance_document')
+                ->label('Insurance Document')
+                ->visible(function (Forms\Get $get) {
+                    return $get('insurance_service') === 'yes';
+                })
+                ->required(),
+            Forms\Components\FileUpload::make('trading_license')
+                ->label('Trading License'),
+            Forms\Components\FileUpload::make('business_permit')
+                ->label('Business Permit'),
+            Forms\Components\FileUpload::make('certificate_of_incorporation')
+                ->label('Certificate of Incorporation'),
+            Forms\Components\FileUpload::make('health_certificate')
+                ->label('Health Certificate'),
+            Forms\Components\TextInput::make('registration_number')
+                ->label('Registration Number')
+                ->maxLength(255),
+            Forms\Components\Select::make('record_maintained')
+                ->options([
+                    'none' => 'None',
+                    'audited_books' => 'Audited Books',
+                    'black_book' => 'Black Book',
+                    'digital_book' => 'Digital Book',
+                ])
+                ->required(),
+            ]),
         ]);
     }
 

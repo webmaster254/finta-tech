@@ -2,16 +2,17 @@
 
 namespace App\Filament\Pages;
 
-use App\Models\Loan\Loan;
 use Filament\Pages\Page;
+use App\Models\Loan\Loan;
 use Filament\Tables\Table;
-use Filament\Pages\Actions\CreateAction;
-use App\Filament\Resources\LoanResource;
-use Filament\Tables\Concerns\InteractsWithTable;
-use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
+use App\Filament\Resources\LoanResource;
+use Filament\Notifications\Notification;
+use Filament\Pages\Actions\CreateAction;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Concerns\InteractsWithTable;
 
 class ListSubmittedLoans extends Page implements HasTable
 {
@@ -64,7 +65,20 @@ class ListSubmittedLoans extends Page implements HasTable
                     ->icon('heroicon-o-pencil')
                      ->url(fn (Loan $record): string => LoanResource::getUrl('edit', ['record' => $record]))
                     
-                    ->color('success')   
+                    ->color('info'),
+                    Action::make('Submit')
+                        ->label('Submit')
+                        ->icon('heroicon-o-check')
+                        ->action(function (Loan $record) {
+                            $record->update(['status' => 'pending']);
+                            Notification::make()
+                                        ->success()
+                                        ->title('Loan Submitted')
+                                        ->body('The loan has been submitted successfully.')
+                                        ->send();
+                        })
+                        ->color('success')
+                        ->requiresConfirmation(),  
                     ]),
             ]);
     }

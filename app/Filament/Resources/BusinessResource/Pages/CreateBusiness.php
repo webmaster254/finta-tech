@@ -17,13 +17,13 @@ class CreateBusiness extends CreateRecord
     return $this->getResource()::getUrl('index');
 }
 
-protected function getSteps(): array
-    {
-        return [
-            Step::make('General Business Information')
-                ->schema(BusinessResource::getGeneralBusinessInformation()),
-            Step::make('Business overview Information')
-                ->schema(BusinessResource::getBusinessOverviewInformation()),
-        ];
-    }
+// protected function getSteps(): array
+//     {
+//         return [
+//             Step::make('General Business Information')
+//                 ->schema(BusinessResource::getGeneralBusinessInformation()),
+//             // Step::make('Business overview Information')
+//             //     ->schema(BusinessResource::getBusinessOverviewInformation()),
+//         ];
+//     }
 }

@@ -37,14 +37,14 @@ class ListSubmittedClients extends Page implements HasTable
 
     protected static ?string $navigationLabel = 'Client Maintenance';
     protected static ?string $navigationGroup = 'Clients Management';
-    protected  ?string $heading = 'Submitted Clients';
+    protected  ?string $heading = 'Client Maintenance';
     protected static ?int $navigationSort = 1; 
     
     use InteractsWithTable;
 
     public static function getNavigationBadge(): ?string
     {
-        return Client::where('status', 'submitted')->count();
+        return Client::where('status', 'rts')->count();
     }
 
      protected function getHeaderActions(): array
@@ -61,12 +61,14 @@ class ListSubmittedClients extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-        ->query(Client::query()->where('status', 'submitted'))
+        ->query(Client::query()->where('status', 'rts'))
             ->columns([
                 TextColumn::make('full_name'),
                 TextColumn::make('mobile'),
                 TextColumn::make('loan_officer.fullname')
                 ->label('Relationship Officer'),
+                TextColumn::make('rts_remarks')
+                ->label('RTS Remarks'),
                 TextColumn::make('status')
                 ->badge()
                 ->label('Status'),
@@ -75,12 +77,25 @@ class ListSubmittedClients extends Page implements HasTable
             ->actions([
                 ActionGroup::make([
                     Action::make('edit')
-                    ->label('Edit Client')
-                    ->icon('heroicon-o-pencil')
-                     ->url(fn (Client $record): string => ClientResource::getUrl('edit', ['record' => $record]))
-                    
-                    ->color('success')   
-                    ]),
+                        ->label('Edit Client')
+                        ->icon('heroicon-o-pencil')
+                        ->url(fn (Client $record): string => ClientResource::getUrl('edit', ['record' => $record]))
+                        
+                        ->color('info'),
+                    Action::make('Submit')
+                        ->label('Submit')
+                        ->icon('heroicon-o-check')
+                        ->action(function (Client $record) {
+                            $record->changeStatus('pending');
+                            Notification::make()
+                                        ->success()
+                                        ->title('Client Submitted')
+                                        ->body('The client has been submitted successfully.')
+                                        ->send();
+                        })
+                        ->color('success')
+                        ->requiresConfirmation(),
+                ])
             ]);
     }
 }

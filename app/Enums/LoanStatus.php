@@ -17,6 +17,7 @@ enum LoanStatus: string implements HasLabel,  HasColor
             case Written_off = 'written_off';
             case Overpaid = 'overpaid';
             case Submitted = 'submitted';
+            case RTS = 'rts';
 
 
 
@@ -38,6 +39,7 @@ enum LoanStatus: string implements HasLabel,  HasColor
                     self::Closed => 'gray',
                     self::Approved => 'info',
                     self::Rescheduled => 'warning',
+                    self::RTS => 'warning',
                 };
             }
         }

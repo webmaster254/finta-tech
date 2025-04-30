@@ -14,6 +14,7 @@ enum Status: string implements HasLabel,  HasColor
             case Deceased = 'deceased';
             case Suspended = 'suspended';
             case Rejected = 'rejected';
+            case RTS = 'rts';
 
             public function getLabel(): ?string
             {
@@ -30,6 +31,7 @@ enum Status: string implements HasLabel,  HasColor
                     self::Deceased => 'gray',
                     self::Closed => 'danger',
                     self::Rejected => 'danger',
+                    self::RTS => 'danger',
                 };
             }
         }

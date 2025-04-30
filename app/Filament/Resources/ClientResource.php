@@ -34,7 +34,6 @@ use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Awcodes\Curator\Models\Media;
 use Awcodes\TableRepeater\Header;
-use Dotswan\MapPicker\Fields\Map;
 use App\Models\ClientRelationship;
 use Filament\Resources\Pages\Page;
 use Illuminate\Support\Facades\DB;
@@ -72,6 +71,7 @@ use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Illuminate\Database\Eloquent\Collection;
 use Filament\Tables\Actions\ExportBulkAction;
+use Cheesegrits\FilamentGoogleMaps\Fields\Map;
 use App\Filament\Resources\ClientResource\Pages;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 use Filament\Infolists\Components\Actions\Action;
@@ -84,6 +84,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Awcodes\Curator\Components\Tables\CuratorColumn;
 use Ysfkaya\FilamentPhoneInput\Infolists\PhoneEntry;
 use Ysfkaya\FilamentPhoneInput\PhoneInputNumberType;
+use Cheesegrits\FilamentGoogleMaps\Fields\Geocomplete;
 use Saade\FilamentAutograph\Forms\Components\SignaturePad;
 use App\Filament\Resources\ClientResource\RelationManagers;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
@@ -532,7 +533,8 @@ public static function form(Form $form): Form
                     ->label('Date of Birth')
                     ->required(),
                 Forms\Components\Select::make('source_of_income')
-                    ->options(SourceOfIncome::class),
+                    ->options(SourceOfIncome::class)
+                    ->required(),
                 Forms\Components\Select::make('type_of_tech')
                     ->required()
                     ->label('Type of Technology')
@@ -568,24 +570,17 @@ public static function form(Form $form): Form
                     ->uploadButtonPosition('left')
                     ->uploadProgressIndicatorPosition('left')
                     ->required(),
-                SignaturePad::make('signature')
-                    ->dotSize(2.0)
-                   ->lineMinWidth(0.5)
-                   ->backgroundColor('rgba(0,0,0,0)')  // Background color on light mode
-                   ->backgroundColorOnDark('#f0a')
-                   ->penColor('#0000FF')
-                   ->penColorOnDark('#fff') 
-                   ->lineMaxWidth(2.5)
-                   ->throttle(16)
-                    ->required()
-                   ->minDistance(5)
-                   ->velocityFilterWeight(0.7) 
-                    ->downloadable()                    // Allow download of the signature (defaults to false)
-                   ->downloadableFormats([             // Available formats for download (defaults to all)
-                       DownloadableFormat::PNG,
-                       DownloadableFormat::JPG,
-                       DownloadableFormat::SVG,
-                   ]),
+                FileUpload::make('signature')
+                    ->label('Signature')
+                    ->image()
+                    ->imageEditor()
+                    ->loadingIndicatorPosition('left')
+                    ->panelAspectRatio('2:1')
+                    ->panelLayout('integrated')
+                    ->removeUploadedFileButtonPosition('right')
+                    ->uploadButtonPosition('left')
+                    ->uploadProgressIndicatorPosition('left')
+                    ->required(),
                    Forms\Components\Textarea::make('notes')
                     ->label('Notes')
                     ->autosize(),
@@ -655,25 +650,14 @@ public static function form(Form $form): Form
                 ->maxLength(20),
             Forms\Components\TextInput::make('estate')
                 ->maxLength(100),
+            Geocomplete::make('full_address'),
             Map::make('location')
-            ->live()
+                 ->reactive()
                 ->label('Location')
-                ->showMyLocationButton(true)
-                ->liveLocation(true, true, 10000)  // Updates live location every 10 seconds
-                ->showMarker()
-                ->draggable()
-                ->columnSpanFull()
-                ->zoom(15)
-                ->minZoom(0)
-                ->maxZoom(28)
-                ->clickable(true)
-                ->afterStateHydrated(function ($state, $record, Set $set): void {
-                    $set('location', ['lat' => $record?->latitude, 'lng' => $record?->longitude]);
-                })
-                ->afterStateUpdated(function (Set $set, ?array $state): void {
+                ->geolocate()
+                ->afterStateUpdated(function ($state, callable $get, callable $set) {
                     $set('latitude', $state['lat']);
                     $set('longitude', $state['lng']);
-                   
                 })
                 ->required(),
             Forms\Components\TextInput::make('latitude')
