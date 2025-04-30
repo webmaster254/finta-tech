@@ -31,8 +31,17 @@ class CollateralRelationManager extends RelationManager
                 Forms\Components\Select::make('loan_collateral_type_id')
                     ->relationship('collateral_type', 'name'),
                 Forms\Components\TextInput::make('value')
+                    ->prefix('KES')
+                    ->live()
+                    ->afterStateUpdated(function (Set $set, Get $get)  {
+                        //divide the value to half
+                        $set('forced_value', $get('value') / 2);
+                    })
                     ->required()
                     ->numeric(),
+                Forms\Components\TextInput::make('forced_value')
+                    ->prefix('KES')
+                    ->readOnly(),
                 Forms\Components\Textarea::make('description'),
                 CuratorPicker::make('file')
                     ->required(),
@@ -50,6 +59,8 @@ class CollateralRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('collateral_type.name')
                     ->label('Collateral Type'),
                 Tables\Columns\TextColumn::make('value')
+                    ->money(Currency::where('is_default', 1)->first()->symbol),
+                Tables\Columns\TextColumn::make('forced_value')
                     ->money(Currency::where('is_default', 1)->first()->symbol),
                 Tables\Columns\TextColumn::make('description'),
                 Tables\Columns\ImageColumn::make('file'),

@@ -20,6 +20,7 @@ return new class extends Migration
             $table->foreignIdFor(LoanCollateralType::class)->constrained()->onUpdate('cascade')->onDelete('cascade');
             $table->text('description')->nullable();
             $table->decimal('value', 65, 0)->nullable();
+            $table->decimal('forced_value', 65, 0)->nullable();
             $table->string('file')->nullable();
             $table->string('status')->default('active');
             $table->timestamps();

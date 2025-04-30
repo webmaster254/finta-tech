@@ -37,7 +37,6 @@ use Filament\Resources\Resource;
 use App\Policies\Loan\LoanPolicy;
 use App\Models\ClientRelationship;
 use App\Models\Loan\LoanGuarantor;
-use Cheesegrits\FilamentPhoneNumbers;
 use Illuminate\Support\Facades\DB;
 use Filament\Forms\Components\Card;
 use Filament\Forms\Components\Grid;
@@ -46,6 +45,7 @@ use Filament\Tables\Filters\Filter;
 use Illuminate\Support\Facades\Auth;
 use App\Jobs\DisburseApprovedLoanJob;
 use App\Models\Loan\LoanTransaction ;
+use Cheesegrits\FilamentPhoneNumbers;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Wizard;
@@ -71,11 +71,12 @@ use Filament\Tables\Actions\ExportAction;
 use Filament\Tables\Actions\ImportAction;
 use Filament\Tables\Filters\QueryBuilder;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Forms\Components\Placeholder;
 use Illuminate\Contracts\Support\Htmlable;
 use Filament\Infolists\Components\Fieldset;
 use Filament\Actions\Action as filteraction;
-use Filament\Infolists\Components\TextEntry;
 
+use Filament\Infolists\Components\TextEntry;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Illuminate\Database\Eloquent\Collection;
 use Filament\Tables\Actions\ExportBulkAction;
@@ -337,6 +338,9 @@ class LoanResource extends Resource implements HasShieldPermissions
             ->addActionLabel('Add Guarantor')
             ->relationship('guarantors')
                 ->schema([
+                    Forms\Components\Hidden::make('client_id')
+                    ->default(fn (Get $get): ?int => $get('../../client_id'))
+                    ->required(),
                     Forms\Components\Select::make('is_previous')
                     ->label('Previous Guarantor?')
                     ->options([
@@ -368,6 +372,7 @@ class LoanResource extends Resource implements HasShieldPermissions
                                 ->reactive()
                                 ->afterStateUpdated(function (Set $set, Get $get)  {
                                     $guarantorId = $get('client');
+                                    
                                     $guarantor = LoanGuarantor::where('client_id', $guarantorId)->latest()->first();
                                     if($guarantor) {
                                         $set('title_id', $guarantor->title_id);
@@ -618,14 +623,23 @@ class LoanResource extends Resource implements HasShieldPermissions
                 Forms\Components\Select::make('loan_collateral_type_id')
                     ->relationship('collateral_type', 'name'),
                 Forms\Components\TextInput::make('value')
+                    ->prefix('KES')
+                    ->live()
+                    ->afterStateUpdated(function (Set $set, Get $get)  {
+                        //divide the value to half
+                        $set('forced_value', $get('value') / 2);
+                    })
                     ->required()
                     ->numeric(),
+                Forms\Components\TextInput::make('forced_value')
+                    ->prefix('KES')
+                    ->readOnly(),
                 Forms\Components\Textarea::make('description'),
                 Forms\Components\FileUpload::make('file')
                     ->required(),
-                Forms\Components\Select::make('status')
-                    ->options(CollateralStatus::class)
-                    ->default('active'),
+                // Forms\Components\Select::make('status')
+                //     ->options(CollateralStatus::class)
+                //     ->default('active'),
                 ]),
         ];
     }

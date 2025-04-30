@@ -23,7 +23,7 @@ class ListSubmittedLoans extends Page implements HasTable
     protected static ?string $navigationLabel = 'Loan Maintenance';
     protected static ?string $navigationGroup = 'Loans Management';
     protected  ?string $heading = 'Submitted Loans';
-    protected static ?int $navigationSort = 1; 
+    protected static ?int $navigationSort = 2; 
 
     public static function getNavigationBadge(): ?string
     {

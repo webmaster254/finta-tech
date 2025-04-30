@@ -16,6 +16,7 @@ class LoanCollateral extends Model
         'loan_collateral_type_id',
         'description',
         'value',
+        'forced_value',
         'file',
         'status',
     ];

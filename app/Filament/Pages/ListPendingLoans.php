@@ -39,7 +39,7 @@ class ListPendingLoans extends Page implements HasTable
     protected static ?string $navigationGroup = 'Loans Management';
     protected static ?string $navigationLabel = 'Approve loans';
     protected  ?string $heading = 'Pending Loans';
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     public static function getNavigationBadge(): ?string
     {
@@ -114,7 +114,7 @@ class ListPendingLoans extends Page implements HasTable
                         ->send();
                     })
                     ->fillForm(fn (Loan $record): array => [
-                        'approved_amount' => $record->approved_amount,
+                        'applied_amount' => $record->applied_amount,
                         'loan_product_id' => $record->loan_product->name,
                         'client_id' => $record->client->full_name,
                         'loan_account_number' => $record->loan_account_number,
@@ -165,8 +165,8 @@ class ListPendingLoans extends Page implements HasTable
                                         TextInput::make('client_type_id')
                                                 ->label('Client Type')
                                                 ->required(),
-                                        TextInput::make('approved_amount')
-                                                ->label('Approved Amount')
+                                        TextInput::make('applied_amount')
+                                                ->label('Applied Amount')
                                                 ->required()
                                                 ->numeric(),
                                         TextInput::make('loan_account_number')
