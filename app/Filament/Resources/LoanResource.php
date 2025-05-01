@@ -337,6 +337,7 @@ class LoanResource extends Resource implements HasShieldPermissions
             Repeater::make('guarantors')
             ->addActionLabel('Add Guarantor')
             ->relationship('guarantors')
+            ->minItems(1)
                 ->schema([
                     Forms\Components\Hidden::make('client_id')
                     ->default(fn (Get $get): ?int => $get('../../client_id'))
@@ -348,7 +349,6 @@ class LoanResource extends Resource implements HasShieldPermissions
                         '0' => 'No',
                     ])
                     ->placeholder('Select')
-                    ->required()
                     ->live()
                     ->afterStateUpdated(fn (Select $component) => $component
                         ->getContainer()

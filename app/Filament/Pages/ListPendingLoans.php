@@ -147,6 +147,8 @@ class ListPendingLoans extends Page implements HasTable
                                 'collateral_type_id' => $cl->collateral_type ? $cl->collateral_type->name : '',
                                 'description' => $cl->description ?? '',
                                 'value' => $cl->value ?? 0,
+                                'forced_value' => $cl->forced_value ?? 0,
+                                'status' => $cl->status,
                                 'file' => $cl->file ?? '',
                             ];
                         }) : [],
@@ -257,36 +259,40 @@ class ListPendingLoans extends Page implements HasTable
                                                         TextInput::make('value')
                                                                 ->label('Value')
                                                                 ->required(),
+                                                        TextInput::make('forced_value')
+                                                                ->label('Forced Value')
+                                                                ->required(),
                                                         FileUpload::make('file')
                                                                 ->label('File')
                                                                 ->required(),
+                                                        Forms\Components\Select::make('status')
                                                 ])
                                                 ->columns(2)
                                                 ->itemLabel(fn (array $state): ?string => $state['collateral_type_id'] ?? null)
                                                 ->required(),
                                         ]),
-                                Step::make('Files')
-                                        ->description('Required Documents')
-                                        ->disabled()
-                                        ->schema([
-                                                Repeater::make('files')
-                                                ->schema([
-                                                        TextInput::make('name')
-                                                                ->label('Name')
-                                                                ->required(),
-                                                        TextInput::make('description')
-                                                                ->label('Description')
-                                                                ->required(),
-                                                        PdfViewerField::make('file')
-                                                                ->label('View the File')
-                                                                ->minHeight('40svh')
-                                                                ->required(),
-                                                ])
-                                                ->columns(2)
-                                                ->minItems(1)
-                                                ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
-                                                ->required(),
-                                        ]),
+                                // Step::make('Files')
+                                //         ->description('Required Documents')
+                                //         ->disabled()
+                                //         ->schema([
+                                //                 Repeater::make('files')
+                                //                 ->schema([
+                                //                         TextInput::make('name')
+                                //                                 ->label('Name')
+                                //                                 ->required(),
+                                //                         TextInput::make('description')
+                                //                                 ->label('Description')
+                                //                                 ->required(),
+                                //                         PdfViewerField::make('file')
+                                //                                 ->label('View the File')
+                                //                                 ->minHeight('40svh')
+                                //                                 ->required(),
+                                //                 ])
+                                //                 ->columns(2)
+                                //                 ->minItems(1)
+                                //                 ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
+                                //                 ->required(),
+                                //         ]),
                          ]),
                    
                 Action::make('rts')

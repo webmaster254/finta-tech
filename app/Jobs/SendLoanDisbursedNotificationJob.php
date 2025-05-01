@@ -43,11 +43,13 @@ class SendLoanDisbursedNotificationJob implements ShouldQueue
         $approved_amount=number_format($loan->approved_amount);
         $outstanding_balance=number_format($loan->repayment_schedules->sum('total_due'));
         $firstSchedule = $loan->repayment_schedules->first();
+        $installmentAmount = number_format($firstSchedule->total_due);
         $due_date = $firstSchedule ? Carbon::parse($firstSchedule->due_date)->format('d/m/Y') : 'N/A';
 
-        $message = "Hi $firstname $middlename $lastname, Your loan of ksh $approved_amount has been disbursed. Your outstanding balance is ksh $outstanding_balance. and Your Due date is $due_date. Thank you";
+        $message = "Dear $firstname $middlename $lastname, your loan request of Kes $approved_amount has been approved. The outstanding balance is Kes $outstanding_balance. Your instalment of Kes $installmentAmount is due from $firstSchedule. Submit your payments on time and grow your Credit limit. Mpesa Till No. 4999702";
         SmsService::sendSms($phone_number, $message);
-        Log::info('disbursed notification sent .',[ 'message' => $message]);
+        //log json data
+        Log::info('disbursed notification sent .',[ 'message' => $message, 'phone_number' => $phone_number, 'approved_amount' => $approved_amount, 'outstanding_balance' => $outstanding_balance, 'installmentAmount' => $installmentAmount, 'due_date' => $due_date]);
 
         // Create message record
         Message::create([

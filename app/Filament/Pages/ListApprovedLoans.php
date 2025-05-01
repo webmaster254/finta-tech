@@ -7,17 +7,20 @@ use Filament\Pages\Page;
 use App\Models\Loan\Loan;
 use Filament\Tables\Table;
 use App\Events\LoanDisbursed;
+use App\Models\ChartOfAccount;
 use Filament\Tables\Actions\Action;
 use Filament\Support\Enums\MaxWidth;
+use Illuminate\Support\Facades\Auth;
 use App\Filament\Exports\LoanExporter;
 use App\Filament\Imports\LoanImporter;
 use Filament\Forms\Components\Repeater;
 use Filament\Tables\Columns\TextColumn;
-use Illuminate\Support\Facades\Auth;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Tables\Actions\ActionGroup;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Tables\Actions\ExportAction;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Wizard\Step;
@@ -92,6 +95,8 @@ class ListApprovedLoans extends Page implements HasTable
                 Action::make('disburse')
                     ->label('Disburse Loan')
                     ->icon('heroicon-o-check')
+                    ->modalDescription('Are you sure you want to disburse this loan?')
+                    ->color('success')
                     ->action(function (Loan $record) {
                         $data = [
                             'approved_amount' => $record->approved_amount,
@@ -101,12 +106,13 @@ class ListApprovedLoans extends Page implements HasTable
                         ];
                         $record->disburseLoan($data,$record);
                         event(new LoanDisbursed($record));
+                        SendLoanDisbursedNotificationJob::dispatch($record);
                            Notification::make()
                              ->title('Loan Disbursed Successfully')
                              ->success()
                              ->body('The Loan has been disbursed ')
                              ->send();
-                       //SendLoanDisbursedNotificationJob::dispatch($record);
+                       
                     })
                     ->modalWidth(MaxWidth::SevenExtraLarge)
                     ->fillForm(fn (Loan $record): array => [
@@ -143,16 +149,18 @@ class ListApprovedLoans extends Page implements HasTable
                                 'collateral_type_id' => $cl->collateral_type ? $cl->collateral_type->name : '',
                                 'description' => $cl->description ?? '',
                                 'value' => $cl->value ?? 0,
+                                'forced_value' => $cl->forced_value ?? 0,
+                                'status' => $cl->status,
                                 'file' => $cl->file ?? '',
                             ];
                         }) : [],
-                        'files' => $record->files && $record->files->count() > 0 ? $record->files->map(function($file) {
-                            return [
-                                'name' => $file->name,
-                                'description' => $file->description ?? '',
-                                'file' => $file->file,
-                            ];
-                        }) : [],
+                        // 'files' => $record->files && $record->files->count() > 0 ? $record->files->map(function($file) {
+                        //     return [
+                        //         'name' => $file->name,
+                        //         'description' => $file->description ?? '',
+                        //         'file' => $file->file,
+                        //     ];
+                        // }) : [],
                     ])
                     
                     ->steps([
@@ -160,50 +168,49 @@ class ListApprovedLoans extends Page implements HasTable
                                 ->schema([
                                         TextInput::make('approved_amount')
                                                 ->label('Approved Amount')
-                                                ->required()
+                                                ->disabled()
                                                 ->numeric(),
                                         TextInput::make('loan_account_number')
                                                 ->label('Loan Account Number')
-                                                ->required(),
-                                        TextInput::make('client_type')
+                                                ->disabled(),
+                                        TextInput::make('client_type_id')
                                                 ->label('Client Type')
-                                                ->required(),
+                                                ->disabled(),
                                         TextInput::make('client_id')
                                                 ->label('Client name')
-                                                ->required()
                                                 ->disabled(),
                                         TextInput::make('loan_product_id')
                                                 ->label('Loan Product')
-                                                ->required(),
+                                                ->disabled(),
                                         TextInput::make('term')
                                                 ->label('Loan Term')
                                                 ->suffix('days')
-                                                ->required(),
+                                                ->disabled(),
                                         TextInput::make('repayment_frequency')
                                                 ->label('Repayment Frequency')
-                                                ->required(),
+                                                ->disabled(),
                                         TextInput::make('repayment_frequency_type')
                                                 ->label('Repayment Frequency Type')
-                                                ->required(),
+                                                ->disabled(),
                                         TextInput::make('interest_rate')
                                                 ->label('Interest Rate')
                                                 ->suffix('%')
-                                                ->required(),
+                                                ->disabled(),
                                         TextInput::make('interest_rate_type')
                                                 ->label('Interest Rate Type')
-                                                ->required(),
+                                                ->disabled(),
                                         TextInput::make('interest_methodology')
                                                 ->label('Interest Methodology')
-                                                ->required(),
+                                                ->disabled(),
                                         TextInput::make('amortization_method')
                                                 ->label('Amortization Method')
-                                                ->required(),
-                                        TextInput::make('first_repayment_date')
+                                                ->disabled(),
+                                        DatePicker::make('first_repayment_date')
                                                 ->label('First Repayment Date')
-                                                ->required(),
+                                                ->disabled(),
                                         TextInput::make('status')
                                                 ->label('Status')
-                                                ->required(),
+                                                ->disabled(),
                                 ])->columns(3),
 
                                 Step::make('Guarantors')
@@ -212,28 +219,28 @@ class ListApprovedLoans extends Page implements HasTable
                                         ->schema([
                                                 TextInput::make('first_name')
                                                 ->label('First Name')
-                                                ->required(),
+                                                ->disabled(),
                                                 TextInput::make('last_name')
                                                 ->label('Last Name')
-                                                ->required(),
+                                                ->disabled(),
                                                 TextInput::make('middle_name')
                                                 ->label('Middle Name')
-                                                ->required(),
+                                                ->disabled(),
                                                 TextInput::make('mobile')
                                                 ->label('Phone Number')
-                                                ->required(),
+                                                ->disabled(),
                                                 TextInput::make('email')
                                                 ->label('Email')
-                                                ->required(),
+                                                ->disabled(),
                                                 TextInput::make('id_number')
                                                 ->label('ID Number')
-                                                ->required(),
+                                                ->disabled(),
                                                 TextInput::make('address')
                                                 ->label('Address')
-                                                ->required(),
+                                                ->disabled(),
                                                 TextInput::make('guaranteed_amount')
                                                 ->label('Guaranteed Amount')
-                                                ->required(),
+                                                ->disabled(),
                                         ])
                                         ->columns(3)
                                         ->itemLabel(fn (array $state): ?string => $state['first_name'] ?? null)
@@ -245,42 +252,55 @@ class ListApprovedLoans extends Page implements HasTable
                                                 ->schema([
                                                         TextInput::make('collateral_type_id')
                                                                 ->label('Collateral Type')
-                                                                ->required(),
+                                                                ->disabled(),
                                                         TextInput::make('description')
                                                                 ->label('Description')
-                                                                ->required(),
+                                                                ->disabled(),
                                                         TextInput::make('value')
                                                                 ->label('Value')
-                                                                ->required(),
-                                                        CuratorPicker::make('file')
+                                                                ->disabled(),
+                                                        TextInput::make('forced_value')
+                                                                ->label('Forced Value')
+                                                                ->disabled(),
+                                                        FileUpload::make('file')
                                                                 ->label('File')
-                                                                ->required(),
+                                                                ->disabled(),
                                                 ])
                                                 ->columns(2)
                                                 ->itemLabel(fn (array $state): ?string => $state['collateral_type_id'] ?? null)
                                                 ->required(),
                                         ]),
-                                Step::make('Files')
-                                        ->description('Required Documents')
+                                Step::make('fund')
+                                        ->description('GL  Account')
                                         ->schema([
-                                                Repeater::make('files')
-                                                ->schema([
-                                                        TextInput::make('name')
-                                                                ->label('Name')
-                                                                ->required(),
-                                                        TextInput::make('description')
-                                                                ->label('Description')
-                                                                ->required(),
-                                                        PdfViewerField::make('file')
-                                                                ->label('View the File')
-                                                                ->minHeight('40svh')
-                                                                ->required(),
-                                                ])
-                                                ->columns(2)
-                                                ->minItems(1)
-                                                ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
-                                                ->required(),
+                                                TextInput::make('fund_source_id')
+                                                        ->label('Fund Source')
+                                                        ->options(ChartOfAccount::where('category', 'asset')->get()->pluck('name', 'id'))
+                                                        ->preload()
+                                                        ->searchable()
+                                                        ->required(),
                                         ]),
+                                // Step::make('Files')
+                                //         ->description('Required Documents')
+                                //         ->schema([
+                                //                 Repeater::make('files')
+                                //                 ->schema([
+                                //                         TextInput::make('name')
+                                //                                 ->label('Name')
+                                //                                 ->required(),
+                                //                         TextInput::make('description')
+                                //                                 ->label('Description')
+                                //                                 ->required(),
+                                //                         PdfViewerField::make('file')
+                                //                                 ->label('View the File')
+                                //                                 ->minHeight('40svh')
+                                //                                 ->required(),
+                                //                 ])
+                                //                 ->columns(2)
+                                //                 ->minItems(1)
+                                //                 ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
+                                //                 ->required(),
+                                //         ]),
                          ]),
                    
 
@@ -298,10 +318,12 @@ class ListApprovedLoans extends Page implements HasTable
                 TextInput::make('approved_amount')
                         ->label('Approved Amount')
                         ->required()
+                        ->disabled()
                         ->numeric(),
                 TextInput::make('loan_account_number')
                         ->label('Loan Account Number')
-                        ->required(),
+                        ->required()
+                        ->disabled(),
                 TextInput::make('client_type')
                         ->label('Client Type')
                         ->required(),
@@ -311,34 +333,44 @@ class ListApprovedLoans extends Page implements HasTable
                         ->disabled(),
                 TextInput::make('loan_product_id')
                         ->label('Loan Product')
-                        ->required(),
+                        ->required()
+                        ->disabled(),
                 TextInput::make('term')
                         ->label('Loan Term')
+                        ->disabled()
                         ->required(),
                 TextInput::make('repayment_frequency')
                         ->label('Repayment Frequency')
-                        ->required(),
+                        ->required()
+                        ->disabled(),
                 TextInput::make('repayment_frequency_type')
                         ->label('Repayment Frequency Type')
-                        ->required(),
+                        ->required()
+                        ->disabled(),
                 TextInput::make('interest_rate')
                         ->label('Interest Rate')
-                        ->required(),
+                        ->required()
+                        ->disabled(),
                 TextInput::make('interest_rate_type')
                         ->label('Interest Rate Type')
-                        ->required(),
+                        ->required()
+                        ->disabled(),
                 TextInput::make('interest_methodology')
                         ->label('Interest Methodology')
-                        ->required(),
+                        ->required()
+                        ->disabled(),
                 TextInput::make('amortization_method')
                         ->label('Amortization Method')
-                        ->required(),
+                        ->required()
+                        ->disabled(),
                 TextInput::make('first_repayment_date')
                         ->label('First Repayment Date')
-                        ->required(),
+                        ->required()
+                        ->disabled(),
                 TextInput::make('status')
                         ->label('Status')
-                        ->required(),
+                        ->required()
+                        ->disabled(),
         ];
     }
 }

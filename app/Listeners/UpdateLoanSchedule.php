@@ -193,7 +193,7 @@ class UpdateLoanSchedule
                 $journal_transaction = new Transaction();
                 $journal_transaction->loan_id = $loan->id;
                 $journal_transaction->branch_id = $loan->branch_id;
-                $journal_transaction->account_id = $loan->fund_id;
+                $journal_transaction->chart_of_account_id = $loan->fund_id;
                 $journal_transaction->type = 'journal';
                 $journal_transaction->description = 'Loan';
                 $journal_transaction->amount= $loan->approved_amount;
@@ -522,7 +522,7 @@ class UpdateLoanSchedule
         $journal_transaction = new Transaction();
         $journal_transaction->loan_id = $loan->id;
         $journal_transaction->branch_id = $loan->branch_id;
-        $journal_transaction->account_id = $loan->fund_id;
+        $journal_transaction->chart_of_account_id = $loan->fund_id;
         $journal_transaction->type = 'journal';
         $journal_transaction->description = 'Wezesha Loan';
         $journal_transaction->amount = $loan->approved_amount;
