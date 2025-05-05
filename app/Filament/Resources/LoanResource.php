@@ -28,6 +28,7 @@ use Filament\Facades\Filament;
 use Illuminate\Support\Carbon;
 use App\Enums\CollateralStatus;
 use App\Events\LoanUndisbursed;
+use App\Jobs\UndisburseLoanJob;
 use App\Models\Loan\LoanCharge;
 use App\Events\LoanLinkedCharge;
 use App\Models\Loan\LoanProduct;
@@ -56,8 +57,8 @@ use Filament\Support\Enums\ActionSize;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Actions\BulkAction;
-use Illuminate\Database\Eloquent\Model;
 //use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use App\Filament\Resources\LoanResource;
 use Brick\PhoneNumber\PhoneNumberFormat;
 use Filament\Forms\Components\TextInput;
@@ -74,8 +75,8 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Forms\Components\Placeholder;
 use Illuminate\Contracts\Support\Htmlable;
 use Filament\Infolists\Components\Fieldset;
-use Filament\Actions\Action as filteraction;
 
+use Filament\Actions\Action as filteraction;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Illuminate\Database\Eloquent\Collection;
@@ -960,7 +961,12 @@ class LoanResource extends Resource implements HasShieldPermissions
                     })
                     ->action(function (Loan $record) {
                         $record->undisburseLoan($record);
-                        event(new LoanUndisbursed($record));
+                        UndisburseLoanJob::dispatch($record);
+                        Notification::make()
+                            ->title('Loan Undisbursed Successfully')
+                            ->success()
+                            ->body('The Loan has been undisbursed')
+                            ->send();
                     })
                     ->requiresConfirmation(),
 

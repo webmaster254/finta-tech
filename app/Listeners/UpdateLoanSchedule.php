@@ -27,53 +27,70 @@ class UpdateLoanSchedule
     /**
      * Handle the event.
      */
+    /**
+     * Determine the period interest rate based on the default interest rate and frequency types
+     * 
+     * @param float $default_interest_rate The interest rate as a percentage (e.g., 1 for 1%)
+     * @param string $repayment_frequency_type The frequency of repayments (days, weeks, months, years)
+     * @param string $interest_rate_type How the interest rate is expressed (day, week, month, year)
+     * @param int $repayment_frequency Number of periods in each payment cycle
+     * @param int $days_in_year Number of days in a year
+     * @param int $days_in_month Number of days in a month
+     * @param int $weeks_in_year Number of weeks in a year
+     * @param int $weeks_in_month Number of weeks in a month
+     * @return float The calculated period interest rate as a decimal
+     */
     public function determine_period_interest_rate($default_interest_rate, $repayment_frequency_type, $interest_rate_type, $repayment_frequency = 1, $days_in_year = 365, $days_in_month = 30, $weeks_in_year = 52, $weeks_in_month = 4)
     {
         $interest_rate = $default_interest_rate;
-        if ($repayment_frequency_type == "days") {
-            if ($interest_rate_type == 'year') {
-                $interest_rate = $interest_rate / $days_in_year;
+        
+        // For daily charging products (e.g., 1% daily)
+        if ($interest_rate_type == 'day') {
+            // If interest is charged daily but repayment is not daily, convert accordingly
+            if ($repayment_frequency_type == 'weeks') {
+                $interest_rate = $interest_rate * 7; // Daily rate * 7 days
+            } elseif ($repayment_frequency_type == 'months') {
+                $interest_rate = $interest_rate * $days_in_month; // Daily rate * days in month
+            } elseif ($repayment_frequency_type == 'years') {
+                $interest_rate = $interest_rate * $days_in_year; // Daily rate * days in year
             }
-            if ($interest_rate_type == 'month') {
-                $interest_rate = $interest_rate / $days_in_month;
-            }
-            if ($interest_rate_type == 'week') {
-                $interest_rate = $interest_rate / 7;
-            }
+            // If repayment is also daily, no conversion needed
         }
-        if ($repayment_frequency_type == "weeks") {
-            if ($interest_rate_type == 'year') {
-                $interest_rate = $interest_rate / $days_in_year;
+        // For weekly charging products
+        elseif ($interest_rate_type == 'week') {
+            if ($repayment_frequency_type == 'days') {
+                $interest_rate = $interest_rate / 7; // Weekly rate / 7 days
+            } elseif ($repayment_frequency_type == 'months') {
+                $interest_rate = $interest_rate * $weeks_in_month; // Weekly rate * weeks in month
+            } elseif ($repayment_frequency_type == 'years') {
+                $interest_rate = $interest_rate * $weeks_in_year; // Weekly rate * weeks in year
             }
-            if ($interest_rate_type == 'month') {
-                $interest_rate = $interest_rate / $weeks_in_month;
-            }
-            if ($interest_rate_type == 'day') {
-                $interest_rate = $interest_rate * 7;
-            }
+            // If repayment is also weekly, no conversion needed
         }
-        if ($repayment_frequency_type == "months") {
-            if ($interest_rate_type == 'year') {
-                $interest_rate = $interest_rate / 12;
+        // For monthly charging products
+        elseif ($interest_rate_type == 'month') {
+            if ($repayment_frequency_type == 'days') {
+                $interest_rate = $interest_rate / $days_in_month; // Monthly rate / days in month
+            } elseif ($repayment_frequency_type == 'weeks') {
+                $interest_rate = $interest_rate / $weeks_in_month; // Monthly rate / weeks in month
+            } elseif ($repayment_frequency_type == 'years') {
+                $interest_rate = $interest_rate * 12; // Monthly rate * 12 months
             }
-            if ($interest_rate_type == 'week') {
-                $interest_rate = $interest_rate * $weeks_in_month;
-            }
-            if ($interest_rate_type == 'day') {
-                $interest_rate = $interest_rate * $days_in_month;
-            }
+            // If repayment is also monthly, no conversion needed
         }
-        if ($repayment_frequency_type == "years") {
-            if ($interest_rate_type == 'month') {
-                $interest_rate = $interest_rate * 12;
+        // For yearly charging products
+        elseif ($interest_rate_type == 'year') {
+            if ($repayment_frequency_type == 'days') {
+                $interest_rate = $interest_rate / $days_in_year; // Yearly rate / days in year
+            } elseif ($repayment_frequency_type == 'weeks') {
+                $interest_rate = $interest_rate / $weeks_in_year; // Yearly rate / weeks in year
+            } elseif ($repayment_frequency_type == 'months') {
+                $interest_rate = $interest_rate / 12; // Yearly rate / 12 months
             }
-            if ($interest_rate_type == 'week') {
-                $interest_rate = $interest_rate * $weeks_in_year;
-            }
-            if ($interest_rate_type == 'day') {
-                $interest_rate = $interest_rate * $days_in_year;
-            }
+            // If repayment is also yearly, no conversion needed
         }
+        
+        // Convert percentage to decimal and adjust for repayment frequency
         return $interest_rate * $repayment_frequency / 100;
     }
 
@@ -92,7 +109,7 @@ class UpdateLoanSchedule
         
         $interest_rate = $this->determine_period_interest_rate($loan->interest_rate, $loan->repayment_frequency_type, $loan->interest_rate_type, $loan->repayment_frequency);
         $balance = round($loan->approved_amount, $loan->decimals);
-        $interest_balance = round(($loan->interest_rate / 100) * $loan->approved_amount, $loan->decimals);
+        $interest_balance = round(($interest_rate) * $loan->approved_amount, $loan->decimals);
         $period = ($loan->loan_term / $loan->repayment_frequency);
         $payment_from_date = $loan->disbursed_on_date;
         $next_payment_date = $loan->first_payment_date;
@@ -116,7 +133,7 @@ class UpdateLoanSchedule
             //flat  method
             if ($loan->interest_methodology == 'flat') {
                 $principal = round($loan->approved_amount / $period, $loan->decimals);
-                $rate = round(($loan->interest_rate/100) * $loan->approved_amount, $loan->decimals);
+                $rate = round($interest_rate * $loan->approved_amount, $loan->decimals);
                 $interest = round($rate /$period, $loan->decimals);
                 if ($i == $period) {
                     $loan_repayment_schedule->principal = round($balance, $loan->decimals);
@@ -193,7 +210,7 @@ class UpdateLoanSchedule
                 $journal_transaction = new Transaction();
                 $journal_transaction->loan_id = $loan->id;
                 $journal_transaction->branch_id = $loan->branch_id;
-                $journal_transaction->chart_of_account_id = $loan->fund_id;
+                $journal_transaction->chart_of_account_id = $loan->chart_of_account_id;
                 $journal_transaction->type = 'journal';
                 $journal_transaction->description = 'Loan';
                 $journal_transaction->amount= $loan->approved_amount;
@@ -390,6 +407,8 @@ class UpdateLoanSchedule
 
             }
 
+
+            
                           
     /**
      * Handle the special Wezesha loan product schedule calculation

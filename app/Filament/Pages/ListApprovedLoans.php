@@ -11,6 +11,7 @@ use App\Models\ChartOfAccount;
 use Filament\Tables\Actions\Action;
 use Filament\Support\Enums\MaxWidth;
 use Illuminate\Support\Facades\Auth;
+use Filament\Forms\Components\Select;
 use App\Filament\Exports\LoanExporter;
 use App\Filament\Imports\LoanImporter;
 use Filament\Forms\Components\Repeater;
@@ -97,14 +98,20 @@ class ListApprovedLoans extends Page implements HasTable
                     ->icon('heroicon-o-check')
                     ->modalDescription('Are you sure you want to disburse this loan?')
                     ->color('success')
-                    ->action(function (Loan $record) {
+                    ->action(function (Loan $record, array $formdata) {
+                        dd($formdata);
                         $data = [
                             'approved_amount' => $record->approved_amount,
                             'disbursed_by_user_id' => Auth::id(),
                             'disbursed_on_date' => Carbon::now(),
-                            'first_payment_date' => $record->expected_first_payment_date,
+                            'fund_id' => $formdata['fund_source_id'],
+                            'first_payment_date' => $formdata['first_repayment_date'],
                         ];
                         $record->disburseLoan($data,$record);
+                        $record->update([
+                                'first_payment_date' => $formdata['first_repayment_date'],
+                        ]);
+                        $record->save();
                         event(new LoanDisbursed($record));
                         SendLoanDisbursedNotificationJob::dispatch($record);
                            Notification::make()
@@ -273,7 +280,7 @@ class ListApprovedLoans extends Page implements HasTable
                                 Step::make('fund')
                                         ->description('GL  Account')
                                         ->schema([
-                                                TextInput::make('fund_source_id')
+                                                Select::make('fund_source_id')
                                                         ->label('Fund Source')
                                                         ->options(ChartOfAccount::where('category', 'asset')->get()->pluck('name', 'id'))
                                                         ->preload()
@@ -304,11 +311,11 @@ class ListApprovedLoans extends Page implements HasTable
                          ]),
                    
 
-                Action::make('undisburse')
-                    ->label('Undisburse')
-                    ->icon('heroicon-o-x-circle')
-                    ->requiresConfirmation(),
-                        ]),
+                // Action::make('undisburse')
+                //     ->label('Undisburse')
+                //     ->icon('heroicon-o-x-circle')
+                //     ->requiresConfirmation(),
+                         ]),
             ]);
     }
 

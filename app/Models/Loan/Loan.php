@@ -612,6 +612,7 @@ public function charges()
         $disbursedNotes = $data['disbursed_notes'];
         $firstPaymentDate = $data['first_payment_date'];
         $loan->status = 'active';
+        $loan->chart_of_account_id = $data['fund_id'];
         $loan->disbursed_on_date = $data['disbursed_on_date'];
         $loan->disbursed_by_user_id = Auth::id();
         $loan->principal_disbursed_derived = $disbursedAmount;
