@@ -19,6 +19,7 @@ use Filament\Facades\Filament;
 use App\Models\ClientNextOfKins;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Filament\Models\Contracts\HasName;
 use Illuminate\Database\Eloquent\Model;
@@ -95,7 +96,7 @@ class Client extends Model implements HasName, HasAvatar
           $model->branch_id = Filament::getTenant()->id;
            $auth = Auth::id();
            $model->created_by_id = $auth;
-           $model->hashed_mobile = hash('sha256', $model->mobile);
+          // $model->hashed_mobile = hash('sha256', $model->mobile);
            
            // Generate account number
            $branch = Branch::find($model->branch_id);
@@ -109,10 +110,31 @@ class Client extends Model implements HasName, HasAvatar
        });
 
        static::updating(static function ($model) {
-           $model->hashed_mobile = hash('sha256', $model->mobile);
+            // Format the mobile number before hashing
+            $formattedMobile = Client::formatMobileNumber($model->mobile);
+            $model->hashed_mobile = hash('sha256', $formattedMobile);
+            Log::info("Original: {$model->mobile}, Formatted: {$formattedMobile}");
        });
    }
 
+   /**
+    * Format mobile number by removing non-numeric characters and ensuring proper country code
+    *
+    * @param string $mobile
+    * @return string
+    */
+   public static function formatMobileNumber($mobile)
+   {
+       // Remove all non-numeric characters (including the + sign)
+       $mobile = preg_replace('/[^0-9]/', '', $mobile);
+
+       // If the number starts with 0, replace with 254 (Kenya code)
+       if (substr($mobile, 0, 1) === '0') {
+           $mobile = '254' . substr($mobile, 1);
+       }
+
+       return $mobile;
+   }
 
    public function branch(): BelongsTo
    {

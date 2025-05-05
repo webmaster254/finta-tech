@@ -2,14 +2,16 @@
 
 namespace App\Filament\Resources\ClientResource\Pages;
 
-use App\Filament\Resources\ClientResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
+use App\Filament\Resources\ClientResource;
+use Cheesegrits\FilamentGoogleMaps\Concerns\InteractsWithMaps;
 use Guava\FilamentDrafts\Admin\Resources\Pages\Edit\Draftable;
 
 class EditClient extends EditRecord
 {
     //use Draftable;
+    use InteractsWithMaps;
     protected static string $resource = ClientResource::class;
 
     protected function getHeaderActions(): array

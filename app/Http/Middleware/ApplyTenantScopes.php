@@ -5,11 +5,13 @@ namespace App\Http\Middleware;
 use Closure;
 use App\Models\User;
 use App\Models\Client;
+use App\Models\Business;
 use App\Models\Loan\Loan;
 use App\Models\BankAccount;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
+use App\Models\EmploymentInfo;
 use Filament\Facades\Filament;
 use App\Models\ChartOfAccountSubtype;
 use Illuminate\Database\Eloquent\Builder;
@@ -44,6 +46,12 @@ class ApplyTenantScopes
             fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
         );
         Transaction::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
+        );
+        Business::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
+        );
+        EmploymentInfo::addGlobalScope(
             fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
         );
 

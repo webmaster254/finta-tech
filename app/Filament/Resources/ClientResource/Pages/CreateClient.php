@@ -39,12 +39,13 @@ class CreateClient extends CreateRecord
                     
                     // Extract the mobile number from the validated data
                     if (isset($validated['data']['mobile']) && !empty($validated['data']['mobile'])) {
+                       $mobile = $validated['data']['mobile'];
                         // Hash the mobile number using SHA-256
-                        $hashedMobile = hash('sha256', $validated['data']['mobile']);
+                        $hashedMobile = hash('sha256', self::formatMobileNumber($mobile));
                         
                         // Set the account_number field with the hashed value
-                        $this->data['account_number'] = $hashedMobile;
-                        //dd($this->data);  
+                        $this->data['hashed_mobile'] = $hashedMobile;
+                        //dd(self::formatMobileNumber($mobile),$hashedMobile);  
                     }
                 }),
             Step::make('Address Details')
@@ -65,6 +66,17 @@ class CreateClient extends CreateRecord
             // Step::make('Summary')
             //     ->schema(ClientResource::getClientDetailsSummary()),
         ];
+    }
+
+    public static function formatMobileNumber($mobile)
+    {
+        $mobile = preg_replace('/[^0-9]/', '', $mobile);
+
+        if (substr($mobile, 0, 1) === '0') {
+            $mobile = '254' . substr($mobile, 1);
+        }
+
+        return $mobile;
     }
 
    

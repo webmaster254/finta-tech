@@ -386,6 +386,9 @@ public static function form(Form $form): Form
                                 ->modalHeading('Initiate Mpesa STK Payment')
                                 ->modalDescription('This will initiate a payment request to the client.')
                                 ->modalIcon('heroicon-o-credit-card')
+                                ->visible(function (Client $record) {
+                                    return $record->status === 'active';
+                                })
                         ->form([
                             Forms\Components\TextInput::make('amount')
                                 ->required()
@@ -513,14 +516,12 @@ public static function form(Form $form): Form
                 FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('mobile')
                     ->label('Mobile')
                     ->region('KE')
-                    ->displayFormat(PhoneNumberFormat::E164)
                     ->mask('9999999999')
                     ->required()
                     ->unique(ignoreRecord: true),
                 FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('other_mobile_no')
                     ->label('Other Mobile')
                     ->region('KE')
-                    ->displayFormat(PhoneNumberFormat::E164)
                     ->mask('9999999999'),
                 Forms\Components\TextInput::make('email')
                     ->label('Email')
@@ -650,20 +651,25 @@ public static function form(Form $form): Form
                 ->maxLength(20),
             Forms\Components\TextInput::make('estate')
                 ->maxLength(100),
-            Geocomplete::make('full_address'),
-            Map::make('location')
-                 ->reactive()
+            
+            Geocomplete::make('location')
                 ->label('Location')
                 ->geolocate()
-                ->afterStateUpdated(function ($state, callable $get, callable $set) {
-                    $set('latitude', $state['lat']);
-                    $set('longitude', $state['lng']);
-                })
+                ->updateLatLng()
+                ->isLocation()
+                ->geocodeOnLoad()
+                ->prefix('Choose:')
                 ->required(),
             Forms\Components\TextInput::make('latitude')
             ->readOnly(),
             Forms\Components\TextInput::make('longitude')
             ->readOnly(),
+            Map::make('location')
+                ->reactive()
+                ->afterStateUpdated(function ($state, callable $get, callable $set) {
+                    $set('latitude', $state['lat']);
+                    $set('longitude', $state['lng']);
+                }),
             FileUpload::make('image')
                 ->label('Image')
                 ->image()
@@ -707,7 +713,6 @@ public static function form(Form $form): Form
                 FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('mobile')
                     ->label('Mobile')
                     ->region('KE')  
-                    ->displayFormat(PhoneNumberFormat::E164)
                     ->mask('9999999999')
                     ->required()
                     ->maxLength(20),
@@ -742,7 +747,6 @@ public static function form(Form $form): Form
             FilamentPhoneNumbers\Forms\Components\PhoneNumber::make('mobile')
                 ->label('Spouse Mobile')
                 ->region('KE')
-                ->displayFormat(PhoneNumberFormat::E164)
                 ->mask('9999999999')
                 ->required()
                 ->maxLength(20),
