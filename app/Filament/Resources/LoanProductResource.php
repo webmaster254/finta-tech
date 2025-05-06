@@ -152,7 +152,7 @@ class LoanProductResource extends Resource
                     ->required(),
                 Forms\Components\Select::make('repayment_account_id')
                     ->label('Repayment Account')
-                    ->options(Product::all()->pluck('name', 'id'))
+                    ->options(ChartOfAccount::where('category', 'liability')->get()->pluck('name', 'id'))
                     ->required(),
 
 

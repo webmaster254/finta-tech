@@ -99,12 +99,12 @@ class ListApprovedLoans extends Page implements HasTable
                     ->modalDescription('Are you sure you want to disburse this loan?')
                     ->color('success')
                     ->action(function (Loan $record, array $formdata) {
-                        dd($formdata);
+                       
                         $data = [
                             'approved_amount' => $record->approved_amount,
                             'disbursed_by_user_id' => Auth::id(),
                             'disbursed_on_date' => Carbon::now(),
-                            'fund_id' => $formdata['fund_source_id'],
+                            'chart_of_account_id' => $formdata['fund_source_id'],
                             'first_payment_date' => $formdata['first_repayment_date'],
                         ];
                         $record->disburseLoan($data,$record);

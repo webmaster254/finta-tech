@@ -6,6 +6,7 @@ use App\Models\PaymentType;
 use App\Models\Transaction;
 use App\Models\JournalEntry;
 use App\Events\LoanDisbursed;
+use App\Models\ClientAccount;
 use App\Models\JournalEntries;
 use Illuminate\Support\Carbon;
 use App\Models\Loan\LoanTransaction;
@@ -106,7 +107,7 @@ class UpdateLoanSchedule
     {
         $loan = $event->loan;
        
-        
+        $client_account = ClientAccount::where('client_id', $loan->client_id)->first();
         $interest_rate = $this->determine_period_interest_rate($loan->interest_rate, $loan->repayment_frequency_type, $loan->interest_rate_type, $loan->repayment_frequency);
         $balance = round($loan->approved_amount, $loan->decimals);
         $interest_balance = round(($interest_rate) * $loan->approved_amount, $loan->decimals);
@@ -296,6 +297,122 @@ class UpdateLoanSchedule
                             $key->is_paid = 1;
                             $disbursement_fees = $disbursement_fees + $key->calculated_amount;
                         }
+                        if ($key->loan_charge_option_id == 8) {
+                            $key->calculated_amount = round(($key->amount * $loan->principal / 100), $loan->decimals);
+                            $key->amount_paid_derived = $key->calculated_amount;
+                            $key->is_paid = 1;
+                            $disbursement_fees = $disbursement_fees + $key->calculated_amount;
+                        }
+
+                        if ($disbursement_fees > 0) {
+
+
+                            // create disbursement fee transaction and get transaction id
+                            $loan_transaction = new LoanTransaction();
+                            $loan_transaction->created_by_id = Auth::id();
+                            $loan_transaction->loan_id = $loan->id;
+                            $loan_transaction->branch_id = $loan->branch_id;
+                            $loan_transaction->name = $key->name;
+                            $loan_transaction->loan_transaction_type_id = 5;
+                            $loan_transaction->submitted_on = $loan->disbursed_on_date;
+                            $loan_transaction->created_on = date("Y-m-d");
+                            $loan_transaction->amount = $disbursement_fees;
+                            $loan_transaction->debit = $disbursement_fees;
+                            $loan_transaction->credit = 0;
+                            $loan_transaction->save();
+                            $disbursement_fees_transaction_id = $loan_transaction->id;
+                       
+
+                             //check if fee is insurance and create journal and transaction entry
+                             if ($key->loan_charge_type_id == 8) {
+                                $journal_entry = new JournalEntries();
+                                $journal_entry->transaction_id = $disbursement_fees_transaction_id;
+                                $journal_entry->type = 'debit';
+                                $journal_entry->branch_id = $loan->branch_id;
+                                $journal_entry->amount = $disbursement_fees;
+                                $journal_entry->description = 'Insurance Fee';
+                                $journal_entry->chart_of_account_id = $loan->loan_product->insurance_chart_of_account_id;
+                                $journal_entry->save();
+                            }   
+
+
+                        
+ 
+                            //create journal for disbursement fee
+                            $journal_entry = new JournalEntries();
+                            $journal_entry->transaction_id = $disbursement_fees_transaction_id;
+                            $journal_entry->type = 'debit';
+                            $journal_entry->branch_id = $loan->branch_id;
+                            $journal_entry->amount = $disbursement_fees;
+                            $journal_entry->description = $key->name.'For Loan '.$loan->loan_account_number;
+                            $journal_entry->chart_of_account_id = $loan->loan_product->administration_fees_chart_of_account_id;
+                            $journal_entry->save();
+
+                            //check if client account has funds and pay the fee
+                           
+                            if ($client_account->balance >= $disbursement_fees) {
+                                $client_account->withdraw($disbursement_fees,'fee',$key->name);
+                            
+                            
+
+                            if($key->loan_charge_type_id == 8){
+                                //transaction
+                                $loan_transaction = new LoanTransaction();
+                                $loan_transaction->created_by_id = Auth::id();
+                                $loan_transaction->loan_id = $loan->id;
+                                $loan_transaction->branch_id = $loan->branch_id;
+                                $loan_transaction->name = $key->name;
+                                $loan_transaction->loan_transaction_type_id = 2;
+                                $loan_transaction->submitted_on = $loan->disbursed_on_date;
+                                $loan_transaction->created_on = date("Y-m-d");
+                                $loan_transaction->amount = $disbursement_fees;
+                                $loan_transaction->credit = $disbursement_fees;
+                                $loan_transaction->debit = 0;
+                                $loan_transaction->reference = $client_account->account_number;
+                                $loan_transaction->save();
+                                $disbursement_fees_transaction_id = $loan_transaction->id;
+
+                                //journal entry
+                                $journal_entry = new JournalEntries();
+                                $journal_entry->transaction_id = $disbursement_fees_transaction_id;
+                                $journal_entry->type = 'credit';
+                                $journal_entry->branch_id = $loan->branch_id;
+                                $journal_entry->amount = $disbursement_fees;
+                                $journal_entry->description = $key->name.'For Loan '.$loan->loan_account_number;
+                                $journal_entry->chart_of_account_id = $loan->loan_product->insurance_chart_of_account_id;
+                                $journal_entry->save();
+                            }
+
+                            //record transactions
+                            $loan_transaction = new LoanTransaction();
+                            $loan_transaction->created_by_id = Auth::id();
+                            $loan_transaction->loan_id = $loan->id;
+                            $loan_transaction->branch_id = $loan->branch_id;
+                            $loan_transaction->name = $key->name;
+                            $loan_transaction->loan_transaction_type_id = 5;
+                            $loan_transaction->submitted_on = $loan->disbursed_on_date;
+                            $loan_transaction->created_on = date("Y-m-d");
+                            $loan_transaction->amount = $disbursement_fees;
+                            $loan_transaction->credit = $disbursement_fees;
+                            $loan_transaction->debit = 0;
+                            $loan_transaction->reference = $client_account->account_number;
+                            $loan_transaction->description = $key->name.'For Loan '.$loan->loan_account_number;
+                            $loan_transaction->save();
+                            $disbursement_fees_transaction_id = $loan_transaction->id;
+
+                            //journal entry
+                            $journal_entry = new JournalEntries();
+                            $journal_entry->transaction_id = $disbursement_fees_transaction_id;
+                            $journal_entry->type = 'credit';
+                            $journal_entry->branch_id = $loan->branch_id;
+                            $journal_entry->amount = $disbursement_fees;
+                            $journal_entry->description = $key->name.'For Loan '.$loan->loan_account_number;
+                            $journal_entry->chart_of_account_id = $loan->loan_product->administration_fees_chart_of_account_id;
+                            $journal_entry->save();
+                        }
+                    }
+                        $loan->disbursement_charges += $disbursement_fees;
+                        $loan->save();
                     }
 
                      //installment_fee
@@ -333,7 +450,7 @@ class UpdateLoanSchedule
                     $loan_transaction->created_by_id = Auth::id();
                     $loan_transaction->loan_id = $loan->id;
                     $loan_transaction->branch_id = $loan->branch_id;
-                    $loan_transaction->name = 'Fee Applied';
+                    $loan_transaction->name = $key->name;
                     $loan_transaction->loan_transaction_type_id = 10;
                     $loan_transaction->submitted_on = $loan->disbursed_on_date;
                     $loan_transaction->created_on = date("Y-m-d");
@@ -360,48 +477,112 @@ class UpdateLoanSchedule
                     }
 
                 }
-                    if ($disbursement_fees > 0) {
-                        $loan_transaction = new LoanTransaction();
-                        $loan_transaction->created_by_id = Auth::id();
-                        $loan_transaction->loan_id = $loan->id;
-                        $loan_transaction->branch_id = $loan->branch_id;
-                        $loan_transaction->name = 'Disbursement Charge';
-                        $loan_transaction->loan_transaction_type_id = 5;
-                        $loan_transaction->submitted_on = $loan->disbursed_on_date;
-                        $loan_transaction->created_on = date("Y-m-d");
-                        $loan_transaction->amount = $disbursement_fees;
-                        $loan_transaction->credit = $disbursement_fees;
-                        $loan_transaction->fees_repaid_derived = $disbursement_fees;
-                        $loan_transaction->save();
-                        $disbursement_fees_transaction_id = $loan_transaction->id;
-                    }
-                    $loan->disbursement_charges = $disbursement_fees;
-                    $loan->save();
+                   
 
 
                     //check if accounting is enabled
                     if ($loan->loan_product->accounting_rule == "cash" || $loan->loan_product->accounting_rule == "accrual_periodic" || $loan->loan_product->accounting_rule == "accrual_upfront") {
                         //loan disbursal
-                        //debit account
+                        //debit loan disbursed account
                         $journal_entry = new JournalEntries();
                         $journal_entry->transaction_id = $journal_transaction_id;
                         $journal_entry->type = 'debit';
                         $journal_entry->branch_id = $loan->branch_id;
                         $journal_entry->amount = $loan->approved_amount;
                         $journal_entry->description = 'Loan Disbursed';
-                        $journal_entry->chart_of_account_id = $loan->loan_product->fund_source_chart_of_account_id;
+                        $journal_entry->chart_of_account_id = $loan->loan_product->portfolio_chart_of_account_id;
                         $journal_entry->save();
 
-                        //credit account
+                        //debit repayment account
+                        $journal_entry = new JournalEntries();
+                        $journal_entry->transaction_id = $journal_transaction_id;
+                        $journal_entry->type = 'debit';
+                        $journal_entry->branch_id = $loan->branch_id;
+                        $journal_entry->amount = $loan->approved_amount;
+                        $journal_entry->description = 'Loan Disbursed';
+                        $journal_entry->chart_of_account_id = $loan->loan_product->repayment_account_id;
+                        $journal_entry->save();
+                        
+
+                        //credit loan portfolio account
                         $journal_entry = new JournalEntries();
                         $journal_entry->transaction_id = $journal_transaction_id;
                         $journal_entry->type = 'credit';
                         $journal_entry->branch_id = $loan->branch_id;
                         $journal_entry->amount = $loan->approved_amount;
                         $journal_entry->description = 'Loan Disbursed';
-                        $journal_entry->chart_of_account_id = $loan->loan_product->loan_portfolio_chart_of_account_id;
+                        $journal_entry->chart_of_account_id = $loan->chart_of_account_id;
                         $journal_entry->save();
 
+
+                         //debit interest accrued account
+                         $journal_entry = new JournalEntries();
+                         $journal_entry->transaction_id = $journal_transaction_id;
+                         $journal_entry->type = 'debit';
+                         $journal_entry->branch_id = $loan->branch_id;
+                         $journal_entry->amount = $loan->interest_disbursed_derived;
+                         $journal_entry->description = 'interest due';
+                         $journal_entry->chart_of_account_id = $loan->loan_product->interest_due_chart_of_account_id;
+                         $journal_entry->save(); 
+
+                         //credit interest accrued account
+                        //  $journal_entry = new JournalEntries();
+                        //  $journal_entry->transaction_id = $journal_transaction_id;
+                        //  $journal_entry->type = 'credit';
+                        //  $journal_entry->branch_id = $loan->branch_id;
+                        //  $journal_entry->amount = $loan->interest_disbursed_derived;
+                        //  $journal_entry->description = 'interest due';
+                        //  $journal_entry->chart_of_account_id = $loan->loan_product->interest_due_chart_of_account_id;
+                        //  $journal_entry->save(); 
+
+                        
+                        // Check if client still has balance after all fees and use it for loan repayment
+                        if ($client_account->balance > 0) {
+                            // Determine amount to use for repayment (available balance)
+                            $repaymentAmount = $client_account->balance;
+                            
+                            // Create a loan transaction record for the repayment
+                            $loanTransaction = new \App\Models\Loan\LoanTransaction();
+                            $loanTransaction->loan_id = $loan->id;
+                            $loanTransaction->branch_id = $loan->branch_id;
+                            $loanTransaction->payment_detail_id = null;
+                            $loanTransaction->loan_transaction_type_id = 2; // Repayment
+                            $loanTransaction->submitted_on = date('Y-m-d');
+                            $loanTransaction->created_on = date('Y-m-d');
+                            $loanTransaction->amount = $repaymentAmount;
+                            $loanTransaction->principal_repaid_derived = 0;
+                            $loanTransaction->interest_repaid_derived = 0;
+                            $loanTransaction->fees_repaid_derived = 0;
+                            $loanTransaction->penalties_repaid_derived = 0;
+                            $loanTransaction->reference = $client_account->account_number;
+                            $loanTransaction->payment_method = 'account_balance';
+                            $loanTransaction->save();
+                            
+                            // Process the repayment using the client account
+                            try {
+                                // Withdraw from client account for loan repayment
+                                $transaction = $client_account->processLoanRepayment(
+                                    $repaymentAmount,
+                                    $loan->id,
+                                    'Automatic loan repayment from account balance',
+                                    [
+                                        'loan_transaction_id' => $loanTransaction->id,
+                                        'payment_method' => 'account_balance',
+                                    ]
+                                );
+                                
+                                // Dispatch job to update loan transactions and schedules
+                                \App\Jobs\UpdateTransactionsJob::dispatch($loan, [
+                                    'amount' => $repaymentAmount,
+                                    'payment_method' => 'account_balance',
+                                    'reference_number' => 'AUTO-' . date('YmdHis')
+                                ]);
+
+                            } catch (\Exception $e) {
+                                // Log error but continue with loan disbursement
+                                \Log::error('Failed to process automatic repayment: ' . $e->getMessage());
+                            }
+                        }
 
                     }
 
