@@ -52,7 +52,7 @@ class RepaymentTransaction extends BaseWidget
                             fn (Builder $query, $date): Builder => $query->whereDate('created_at', '=', $date),
                         );
                 }),
-            SelectFilter::make('Invoice_no')
+            SelectFilter::make('status')
                 ->options([
                     'resolved' => 'Resolved',
                     'not_resolved' => 'Not Resolved',
@@ -82,7 +82,7 @@ class RepaymentTransaction extends BaseWidget
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('Invoice_no')
+                Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->label('Status')
                     ->color(fn (string $state): string => match ($state){
@@ -128,10 +128,10 @@ class RepaymentTransaction extends BaseWidget
                 ->modalDescription('Are you sure you want to resolve this transaction?')
                 ->visible(function (MpesaC2B $record){
                     $policy = new MpesaC2BPolicy();
-                    return $record->Invoice_no == 'not_resolved' && $policy->update(Auth::user(), $record);
+                    return $record->status == 'not_resolved' && $policy->update(Auth::user(), $record);
                 })
                 ->action(function (MpesaC2B $record ) {
-                    $record->update(['Invoice_no' => 'processing_fees']);
+                    $record->update(['status' => 'processing_fees']);
                     $record->save();
                     Notification::make()
                                  ->success()
@@ -145,7 +145,7 @@ class RepaymentTransaction extends BaseWidget
                 ->color('success')
                 ->visible(function (MpesaC2B $record){
                     $policy = new MpesaC2BPolicy();
-                    return $record->Invoice_no == 'not_resolved' && $policy->update(Auth::user(), $record);
+                    return $record->status == 'not_resolved' && $policy->update(Auth::user(), $record);
                 })
                 ->form([
                     TextInput::make('account_number')->label('Account number'),

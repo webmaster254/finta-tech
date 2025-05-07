@@ -15,7 +15,7 @@ class MpesaC2B extends Model
 
     protected $fillable = [
         'Transaction_type','Transaction_ID','Transaction_Time','Amount','Business_Shortcode',
-        'Account_Number','Invoice_no','Organization_Account_Balance','ThirdParty_Transaction_ID',
+        'Account_Number','status','Organization_Account_Balance','ThirdParty_Transaction_ID',
         'Phonenumber','FirstName', 'MiddleName', 'LastName'
     ];
     protected $table = 'mpesa_c2b';
@@ -32,7 +32,7 @@ class MpesaC2B extends Model
     public function resolve(MpesaC2B $record): void
     {
         $record->update([
-            'Invoice_no' => 'resolved',
+            'status' => 'resolved',
         ]);
     }
 
@@ -80,7 +80,7 @@ class MpesaC2B extends Model
                 event(new LoanRepayment($loan,$loanTransactionData));
 
                 $record->update([
-                    'Invoice_no' => 'resolved',
+                    'status' => 'resolved',
                 ]);
     }
 }

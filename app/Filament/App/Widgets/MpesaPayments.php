@@ -44,7 +44,7 @@ class MpesaPayments extends BaseWidget
                             fn (Builder $query, $date): Builder => $query->whereDate('created_at', '=', $date),
                         );
                 }),
-          SelectFilter::make('Invoice_no')
+          SelectFilter::make('status')
                 ->options([
                     'resolved' => 'Resolved',
                     'not_resolved' => 'Not Resolved',
@@ -71,7 +71,7 @@ class MpesaPayments extends BaseWidget
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('FirstName')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('Invoice_no')
+                Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->label('Status')
                     ->color(fn (string $state): string => match ($state){

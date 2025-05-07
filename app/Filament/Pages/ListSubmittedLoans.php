@@ -27,7 +27,7 @@ class ListSubmittedLoans extends Page implements HasTable
 
     public static function getNavigationBadge(): ?string
     {
-        return Loan::where('status', 'submitted')->count();
+        return Loan::where('status', 'rts')->count();
     }
 
     protected function getHeaderActions(): array
@@ -44,7 +44,7 @@ class ListSubmittedLoans extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query(Loan::query()->where('status', 'submitted'))
+            ->query(Loan::query()->where('status', 'rts'))
             ->columns([
                 TextColumn::make('loan_account_number')
                         ->label('Loan Account No')
@@ -54,6 +54,8 @@ class ListSubmittedLoans extends Page implements HasTable
                 TextColumn::make('client.full_name')
                         ->sortable()
                         ->label('Client Name'),
+                TextColumn::make('rts_reason')
+                        ->label('RTS Remarks'),
                 TextColumn::make('status')
                         ->badge()
                         ->label('Status'),

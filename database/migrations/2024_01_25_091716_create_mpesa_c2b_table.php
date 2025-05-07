@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('Amount')->nullable();
             $table->string('Business_Shortcode')->nullable();
             $table->string('Account_Number')->nullable();
-            $table->string('Invoice_no')->nullable();
+            $table->string('status')->nullable();
             $table->string('Organization_Account_Balance')->nullable();
             $table->string('ThirdParty_Transaction_ID')->nullable();
             $table->string('Phonenumber')->nullable();

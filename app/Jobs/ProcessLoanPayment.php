@@ -36,7 +36,29 @@ class ProcessLoanPayment implements ShouldQueue
      */
     public function handle(): void
     {
-        $clientWithActiveLoan = Client::where('account_number', $this->response['BillRefNumber'])
+
+       //first check if client exists
+        $client = Client::where('hashed_mobile', $this->response['MSISDN'])
+                        ->first();
+
+        if (!$client){
+             //update payment status to not resolved
+             MpesaC2B::where('Transaction_ID', $this->response['TransID'])
+             ->update(['status' => 'not_resolved']);
+            return;
+        }
+
+        //first save the money to client account
+        $clientAccount = $client->account;
+        $transaction = $clientAccount->deposit($this->response['TransAmount'],'deposit','Mpesa deposit-'.$this->response['TransID'],[                                  // Additional metadata
+            'reference_number' => $this->response['TransID'],
+            'payment_method' => 'mpesa',
+            'posted_by' => 'system Api',
+            'transaction_id' => $this->response['TransID']
+        ]);
+        
+                        
+        $clientWithActiveLoan = Client::where('hashed_mobile', $this->response['MSISDN'])
                         ->where('status', 'active')
                         ->whereHas('branch', function ($query) {
                             $query->whereIn('id', Branch::pluck('id'));
@@ -53,21 +75,29 @@ class ProcessLoanPayment implements ShouldQueue
             if (!$clientWithActiveLoan){
                 //update payment status to not resolved
                 MpesaC2B::where('Transaction_ID', $this->response['TransID'])
-                            ->update(['Invoice_no' => 'not_resolved']);
+                            ->update(['status' => 'not_resolved']);
 
             } else {
 
                 $loandata = $clientWithActiveLoan->loans->first();
+                
                 if(!$loandata){
                     //update payment status to not resolved
                     MpesaC2B::where('Transaction_ID', $this->response['TransID'])
-                                ->update(['Invoice_no' => 'not_resolved']);
+                                ->update(['status' => 'not_resolved']);
                     return;
                 }
 
                 MpesaC2B::where('Transaction_ID', $this->response['TransID'])
-                        ->update(['Invoice_no' => 'resolved']);
-
+                        ->update(['status' => 'resolved']);
+                
+                //withdraw fund from client account to repay loan
+                $withdrawTransaction = $clientAccount->withdraw($this->response['TransAmount'],'withdraw','Loan repayment-'.$loandata->loan_account_number,[                                  // Additional metadata
+                    'reference_number' => $this->response['TransID'],
+                    'payment_method' => 'mpesa',
+                    'posted_by' => 'system Api',
+                    'transaction_id' => $this->response['TransID']
+                ]);
 
                 $loanTransactionData = [
                             'created_by_id' => Auth::id(),

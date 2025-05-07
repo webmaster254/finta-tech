@@ -9,12 +9,12 @@ use App\Filament\Resources\BusinessResource;
 
 class CreateBusiness extends CreateRecord
 {
-    use CreateRecord\Concerns\HasWizard;
+    //use CreateRecord\Concerns\HasWizard;
     protected static string $resource = BusinessResource::class;
 
     protected function getRedirectUrl(): string
 {
-    return $this->getResource()::getUrl('index');
+    return $this->getResource()::getUrl('view', ['record' => $this->getRecord()]);
 }
 
 // protected function getSteps(): array

@@ -10,6 +10,7 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Fieldset;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\Placeholder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Resources\RelationManagers\RelationManager;
 
@@ -263,17 +264,52 @@ class BusinessRelationManager extends RelationManager
                     ->schema([
                         Forms\Components\TextInput::make('net_profit')
                         ->prefix('KES')
+                        ->live(onBlur: true)
                         ->label('Net Profit')
                         ->placeholder(function (Forms\Get $get, Forms\Set $set, ?int $state) {
                             $get('gross_profit');
                             $hsTotal= $get('hs_total');
                             $bsTotal= $get('bs_total');
-                            $set('net_profit', $get('gross_profit') - $hsTotal - $bsTotal);
-                            return $get('gross_profit') - $hsTotal - $bsTotal;
-                        })
+                            $profit = $get('gross_profit') - $hsTotal - $bsTotal;
+                            $set('net_profit', $profit);
+                            // Calculate loan affordability based on net profit
+                              if ($profit > 0) {
+                                  // Weekly net profit
+                                  $weeklyNetProfit = $profit;
+                                  
+                                  // Calculate 75% of weekly net profit (affordable weekly installment)
+                                  $affordableWeeklyInstallment = $weeklyNetProfit * 0.75;
+                                  
+                                  // Calculate affordable daily installment
+                                  $affordableDailyInstallment = $affordableWeeklyInstallment / 7;
+                                  
+                                  // Calculate monthly payable (P+I)
+                                  $monthlyPayable = $affordableDailyInstallment * 30;
+                                  
+                                  // Calculate principal (P = monthly payable - 30% interest)
+                                  $interestAmount = $monthlyPayable * 0.30;
+                                  $principal = $monthlyPayable - $interestAmount;
+                                  
+                                  // Round to nearest 100
+                                  $suggestedLoanLimit = round($principal, -2);
+                                  
+                                  // Update affordability field
+                                  $set('affordability', $suggestedLoanLimit);
+                              } else {
+                                  // If net profit is zero or negative, set affordability to zero
+                                  $set('affordability', 0);
+                              }
+                          return $profit;
+                      })
                         ->numeric()
                         ->readOnly()
                         ->required(),
+                      Placeholder::make('affordability')
+                      ->prefix('KES')
+                      ->label('Affordability')
+                      ->numeric()
+                      ->disabled()
+                      ->required(),
                     ])
                     ->columns(2),
 
@@ -322,6 +358,10 @@ class BusinessRelationManager extends RelationManager
                     ->label('Net Profit')
                     ->prefix('KES ')
                     ->numeric(),
+                Tables\Columns\TextColumn::make('affordability')
+                    ->label('Affordability')
+                    ->prefix('KES ')
+                    ->numeric(),
             ])
             ->filters([
                 //
@@ -330,9 +370,6 @@ class BusinessRelationManager extends RelationManager
                 Tables\Actions\CreateAction::make()
                 ->createAnother(false)
                 ->successNotificationTitle('Business Overview added')
-                ->successRedirectUrl(fn (Model $record): string => route('business.view', [
-                    'business' => $record,
-                ]))
                 ->label('Add Business Overview')
                 ->icon('heroicon-o-document-text')
                 ->modalHeading('Add Business Overview'),
@@ -369,6 +406,36 @@ class BusinessRelationManager extends RelationManager
     }
    private static function updateNetProfit(Forms\Get $get, Forms\Set $set):void
     {
-        $set('net_profit', $get('gross_profit') - $get('bs_total') - $get('hs_total'));
+        // Calculate net profit
+        $netProfit = $get('gross_profit') - $get('bs_total') - $get('hs_total');
+        $set('net_profit', $netProfit);
+        
+        // Calculate loan affordability based on net profit
+        if ($netProfit > 0) {
+            // Weekly net profit
+            $weeklyNetProfit = $netProfit;
+            
+            // Calculate 75% of weekly net profit (affordable weekly installment)
+            $affordableWeeklyInstallment = $weeklyNetProfit * 0.75;
+            
+            // Calculate affordable daily installment
+            $affordableDailyInstallment = $affordableWeeklyInstallment / 7;
+            
+            // Calculate monthly payable (P+I)
+            $monthlyPayable = $affordableDailyInstallment * 30;
+            
+            // Calculate principal (P = monthly payable - 30% interest)
+            $interestAmount = $monthlyPayable * 0.30;
+            $principal = $monthlyPayable - $interestAmount;
+            
+            // Round to nearest 100
+            $suggestedLoanLimit = round($principal, -2);
+            
+            // Update affordability field
+            $set('affordability', $suggestedLoanLimit);
+        } else {
+            // If net profit is zero or negative, set affordability to zero
+            $set('affordability', 0);
+        }
     }
 }

@@ -86,6 +86,11 @@ class EmploymentResource extends Resource
                     ->numeric()
                     ->readOnly()
                     ->required(),
+                Forms\Components\TextInput::make('affordability')
+                    ->prefix('KES')
+                    ->numeric()
+                    ->readOnly()
+                    ->required(),
                 Forms\Components\FileUpload::make('employment_letter')
                     ->label('Employment Letter')
                     ->required(),
@@ -145,5 +150,39 @@ class EmploymentResource extends Resource
             'create' => Pages\CreateEmployment::route('/create'),
             'edit' => Pages\EditEmployment::route('/{record}/edit'),
         ];
+    }
+
+    private static function updateNetIncome(Forms\Get $get, Forms\Set $set, ?int $state):void
+    {
+        $netIncome = $get('gross_income') + $get('other_income') - $get('expense');
+        $set('net_income', $netIncome);
+        // Calculate loan affordability based on net profit
+        if ($netIncome > 0) {
+            // Weekly net profit
+            $weeklyNetProfit = $netIncome;
+            
+            // Calculate 75% of weekly net profit (affordable weekly installment)
+            $affordableWeeklyInstallment = $weeklyNetProfit * 0.75;
+            
+            // Calculate affordable daily installment
+            $affordableDailyInstallment = $affordableWeeklyInstallment / 7;
+            
+            // Calculate monthly payable (P+I)
+            $monthlyPayable = $affordableDailyInstallment * 30;
+            
+            // Calculate principal (P = monthly payable - 30% interest)
+            $interestAmount = $monthlyPayable * 0.30;
+            $principal = $monthlyPayable - $interestAmount;
+            
+            // Round to nearest 100
+            $affordability = round($principal, -2);
+            
+            // Update affordability field
+            $set('affordability', $affordability);
+        } else {
+            // If net profit is zero or negative, set affordability to zero
+            $set('affordability', 0);
+        }
+
     }
 }

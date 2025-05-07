@@ -28,7 +28,7 @@ class MpesaC2BImporter extends Importer
                 ->rules(['max:255']),
             ImportColumn::make('Account_Number')
                 ->rules(['required', 'max:255']),
-            ImportColumn::make('Invoice_no')
+            ImportColumn::make('status')
                 ->rules(['required', 'max:255'])
                 ->requiredMapping(),
             ImportColumn::make('Organization_Account_Balance')

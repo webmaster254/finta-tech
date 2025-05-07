@@ -19,7 +19,7 @@ class MpesaExporter extends Exporter
             ExportColumn::make('Transaction_ID'),
             ExportColumn::make('Amount'),
             ExportColumn::make('Account_Number'),
-            ExportColumn::make('Invoice_no'),
+            ExportColumn::make('status'),
         ];
     }
 

@@ -43,7 +43,7 @@ class BusinessResource extends Resource
     public static function form(Form $form): Form
 {
     return $form
-        ->columns(3)
+        
         ->schema([
             Card::make()
             ->columns(3)
@@ -132,21 +132,22 @@ class BusinessResource extends Resource
             Forms\Components\TextInput::make('mitigations')
                 ->maxLength(255),
             Forms\Components\Select::make('insurance_service')
+                ->live(onBlur: true)
                 ->options([
-                    'yes' => 'Yes',
-                    'no' => 'No',
+                    '1' => 'Yes',
+                    '0' => 'No',
                 ])
                 ->required(),
             Forms\Components\TextInput::make('insurance')
                 ->label('Insurance Ref Number')
                 ->visible(function (Forms\Get $get) {
-                    return $get('insurance_service') === 'yes';
+                    return $get('insurance_service') === '1';
                 })
                 ->required(),
             Forms\Components\FileUpload::make('insurance_document')
                 ->label('Insurance Document')
                 ->visible(function (Forms\Get $get) {
-                    return $get('insurance_service') === 'yes';
+                    return $get('insurance_service') === '1';
                 })
                 ->required(),
             Forms\Components\FileUpload::make('trading_license')
@@ -594,8 +595,8 @@ class BusinessResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('sector')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('status')
-                    ->badge(),
+                // Tables\Columns\TextColumn::make('status')
+                //     ->badge(),
             ])
             ->filters([
                 //
@@ -650,12 +651,17 @@ class BusinessResource extends Resource
                         TextEntry::make('sector')
                             ->label('Sector')
                             ->color('info'),
-                        TextEntry::make('status')
-                            ->label('Status')
-                            ->color('info'),
+                        // TextEntry::make('status')
+                        //     ->label('Status')
+                        //     ->color('info'),
                         TextEntry::make('registration_number')
                             ->label('Registration Number')
                             ->color('info'),
+                        
+                        TextEntry::make('insurance')
+                            ->label('Insurance Ref Number')
+                            ->color('info'),
+                        
                         TextEntry::make('establishment_date')
                             ->label('Establishment Date')
                             ->color('info'),
@@ -669,9 +675,6 @@ class BusinessResource extends Resource
                         }
                         return $date->age . ' years';
                     })
-                            ->color('info'),
-                        TextEntry::make('insurance')
-                            ->label('Insurance')
                             ->color('info'),
                         TextEntry::make('record_maintained')
                             ->label('Record Maintained')
@@ -723,6 +726,9 @@ class BusinessResource extends Resource
                 ]),
                 infolistfieldset::make('Business Documents')
                     ->schema([
+                        PdfViewerEntry::make('insurance_document')
+                            ->label('Insurance Document')
+                            ->minHeight('40svh'),
                         PdfViewerEntry::make('trading_license')
                             ->label('Trading License')
                             ->minHeight('40svh'),

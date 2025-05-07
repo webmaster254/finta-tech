@@ -62,7 +62,7 @@ class MpesaC2BResource extends Resource implements HasShieldPermissions
                 Forms\Components\TextInput::make('Business_Shortcode')
                     ->maxLength(255),
                 Forms\Components\TextInput::make('Account_Number'),
-                Forms\Components\TextInput::make('Invoice_no')
+                Forms\Components\TextInput::make('status')
                     ->maxLength(255),
                 Forms\Components\TextInput::make('Phonenumber')
                     ->maxLength(255),
@@ -110,7 +110,7 @@ class MpesaC2BResource extends Resource implements HasShieldPermissions
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('Invoice_no')
+                Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->label('Status')
                     ->color(fn (string $state): string => match ($state){
@@ -171,7 +171,7 @@ class MpesaC2BResource extends Resource implements HasShieldPermissions
 
                     return 'Created at ' . Carbon::parse($data['paid_date'])->toFormattedDateString();
                 }),
-            SelectFilter::make('Invoice_no')
+            SelectFilter::make('status')
                 ->label('Status')
                 ->options([
                     'resolved' => 'Resolved',
@@ -194,10 +194,10 @@ class MpesaC2BResource extends Resource implements HasShieldPermissions
                 ->modalDescription('Are you sure you want to resolve this transaction?')
                 ->visible(function (MpesaC2B $record){
                     $policy = new MpesaC2BPolicy();
-                    return $record->Invoice_no == 'not_resolved' && $policy->update(Auth::user(), $record);
+                    return $record->status == 'not_resolved' && $policy->update(Auth::user(), $record);
                 })
                 ->action(function (MpesaC2B $record ) {
-                    $record->update(['Invoice_no' => 'processing_fees']);
+                    $record->update(['status' => 'processing_fees']);
                     $record->save();
                     Notification::make()
                                  ->success()
@@ -215,10 +215,10 @@ class MpesaC2BResource extends Resource implements HasShieldPermissions
                 ->modalDescription('Are you sure you want to resolve this transaction?')
                 ->visible(function (MpesaC2B $record){
                     $policy = new MpesaC2BPolicy();
-                    return $record->Invoice_no == 'not_resolved' && $policy->update(Auth::user(), $record);
+                    return $record->status == 'not_resolved' && $policy->update(Auth::user(), $record);
                 })
                 ->action(function (MpesaC2B $record ) {
-                    $record->update(['Invoice_no' => 'refund']);
+                    $record->update(['status' => 'refund']);
                     $record->save();
                     Notification::make()
                                  ->success()
@@ -232,7 +232,7 @@ class MpesaC2BResource extends Resource implements HasShieldPermissions
                 ->icon('heroicon-s-check-circle')
                 ->visible(function (MpesaC2B $record){
                     $policy = new MpesaC2BPolicy();
-                    return $record->Invoice_no == 'not_resolved' && $policy->update(Auth::user(), $record);
+                    return $record->status == 'not_resolved' && $policy->update(Auth::user(), $record);
                 })
                 ->form([
                     TextInput::make('account_number')->label('Account number'),

@@ -314,7 +314,7 @@ class MpesaController extends Controller
                     $c2b->Amount=$TransAmount;
                     $c2b->Business_Shortcode=$BusinessShortCode;
                     $c2b->Account_Number=$BillRefNumber;
-                    $c2b->Invoice_no=$InvoiceNumber;
+                    $c2b->status=$InvoiceNumber;
                     $c2b->Organization_Account_Balance=$OrgAccountBalance;
                     $c2b->ThirdParty_Transaction_ID=$ThirdPartyTransID;
                     $c2b->Phonenumber=$MSISDN;

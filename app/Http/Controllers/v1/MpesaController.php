@@ -28,7 +28,7 @@ class MpesaController extends Controller
                     $query->where('Transaction_ID', 'LIKE', "%{$search}%")
 
                     ->orWhere('FirstName', 'LIKE', "%{$search}%")
-                    ->orWhere('Invoice_no', 'LIKE', "%{$search}%")
+                    ->orWhere('status', 'LIKE', "%{$search}%")
                     ->orWhere('Account_Number', 'LIKE', "%{$search}%");
                 });
             }

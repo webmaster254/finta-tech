@@ -47,6 +47,7 @@ class BusinessOverview extends Model
         'bs_total',
         'gross_profit',
         'net_profit',
+        'affordability',
         'mpesa_statement',
         'mpesa_code',
     ];

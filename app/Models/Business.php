@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Filament\Panel;
 use App\Models\User;
+use App\Models\Branch;
 use App\Enums\Industry;
 use App\Enums\Ownership;
 use App\Enums\BusinessType;
@@ -41,6 +42,7 @@ class Business extends Model
         'opportunities',
         'threats',
         'mitigations',
+        'insurance_service',
         'insurance',
         'insurance_document',
         'trading_license',
@@ -67,6 +69,11 @@ class Business extends Model
             $model->assessed_by = $auth;
             $model->assessed_date = now();
         });
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
     /**
      * Get the clients associated with this business.

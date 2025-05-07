@@ -307,8 +307,9 @@ class ListPendingLoans extends Page implements HasTable
                             ->label('Reason for RTS')
                             ->required(),
                     ])
-                    ->action(function (Loan $record) {
+                    ->action(function (Loan $record,array $data) {
                         $record->status = 'rts';
+                        $record->rts_reason = $data['rts_reason'];
                         $record->save();
                         Notification::make()
                             ->title('Loan RTSed Successfully')

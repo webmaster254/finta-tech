@@ -40,6 +40,7 @@ return new class extends Migration
             $table->decimal('bs_total', 10, 2)->nullable();
             $table->decimal('gross_profit', 10, 2)->nullable();
             $table->decimal('net_profit', 10, 2)->nullable();
+            $table->decimal('affordability', 10, 2)->nullable();
             $table->string('mpesa_statement')->nullable();
             $table->string('mpesa_code')->nullable();
             $table->timestamps();
