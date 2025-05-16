@@ -22,6 +22,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\Split;
 use Filament\Forms\Components\DatePicker;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\Placeholder;
 use Filament\Infolists\Components\TextEntry;
 use App\Filament\Resources\BusinessResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -45,6 +46,25 @@ class BusinessResource extends Resource
     return $form
         
         ->schema([
+            Wizard::make()
+            ->columnSpanFull()
+            ->schema([
+                Wizard\Step::make('General Business Information')
+                    ->description('Enter business information')
+                    ->columns(2)
+                    ->schema(self::getGeneralBusinessInformation()),
+                Wizard\Step::make('Business Overview')
+                    ->description('Enter business overview information')
+                    ->columns(2)
+                    ->schema(self::getBusinessOverviewInformation()),
+            ])
+           
+        ]);
+    }
+
+    public static function getGeneralBusinessInformation(): array
+    {
+        return [
             Card::make()
             ->columns(3)
             ->schema([
@@ -132,6 +152,7 @@ class BusinessResource extends Resource
             Forms\Components\TextInput::make('mitigations')
                 ->maxLength(255),
             Forms\Components\Select::make('insurance_service')
+               ->label('Is Business Insured')
                 ->live(onBlur: true)
                 ->options([
                     '1' => 'Yes',
@@ -170,140 +191,15 @@ class BusinessResource extends Resource
                 ])
                 ->required(),
             ]),
-        ]);
-    }
-
-    public static function getGeneralBusinessInformation(): array
-    {
-        return [
-            Card::make()->schema([
-                Forms\Components\Hidden::make('status')
-                ->default('pending'),
-            Forms\Components\Select::make('client_id')
-            ->live(onBlur: true)
-            ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, ?int $state) {
-                $client = Client::find($state);
-                $set('client_name', $client->full_name);
-            })
-            ->options(Client::where('source_of_income', 'Business')->get()->mapWithKeys(function ($client) {
-                return [$client->id => $client->account_number];
-                }))
-                ->label('Client')
-                ->required(),
-            Forms\Components\TextInput::make('client_name')
-                ->label('Client Name')
-                ->disabled(),
-
-                
-            Forms\Components\TextInput::make('name')
-                ->label('Business Name')
-                ->required()
-                ->maxLength(255),
-            Forms\Components\Select::make('business_type')
-                ->options(BusinessType::class)
-                ->required(),
-            Forms\Components\TextInput::make('description')
-                ->maxLength(255),
-            Forms\Components\Select::make('industry')
-                ->options(Industry::class)
-                ->required(),
-            Forms\Components\DatePicker::make('establishment_date')
-                ->native(false)
-                ->required()
-                ->before(now())
-                ->maxDate(now()->subMonths(6))
-                ->rule(function () {
-                    return function (string $attribute, $value, \Closure $fail) {
-                        $date = \Carbon\Carbon::parse($value);
-                        if ($date->isAfter(now()->subMonths(6))) {
-                            $fail("The business must be at least 6 months old.");
-                        }
-                    };
-                })
-                ->helperText('Business must be at least 6 months old'),
-            Forms\Components\TextInput::make('location')
-                ->maxLength(255),
-            Forms\Components\Select::make('ownership')
-                ->options(Ownership::class)
-                ->required(),
-            Forms\Components\Select::make('premise_ownership')
-                ->options([
-                    'owned' => 'Owned',
-                    'rented' => 'Rented',
-                    'leased' => 'Leased',
-                ])
-                ->required(),
-            Forms\Components\TextInput::make('employees')
-                ->numeric()
-                ->required(),
-            Forms\Components\Select::make('sector')
-                ->options([
-                    'msme' => 'MSME',
-                    'sme' => 'SME',
-                ])
-                ->required(),
-            Forms\Components\TextInput::make('major_products')
-                ->maxLength(255),
-            Forms\Components\TextInput::make('major_suppliers')
-                ->maxLength(255),
-            Forms\Components\TextInput::make('major_customers')
-                ->maxLength(255),
-            Forms\Components\TextInput::make('major_competitors')
-                ->maxLength(255),
-            Forms\Components\TextInput::make('strengths')
-                ->maxLength(255),
-            Forms\Components\TextInput::make('weaknesses')
-                ->maxLength(255),
-            Forms\Components\TextInput::make('opportunities')
-                ->maxLength(255),
-            Forms\Components\TextInput::make('threats')
-                ->maxLength(255),
-            Forms\Components\TextInput::make('mitigations')
-                ->maxLength(255),
-            Forms\Components\Select::make('insurance_service')
-                ->options([
-                    'yes' => 'Yes',
-                    'no' => 'No',
-                ])
-                ->required(),
-            Forms\Components\TextInput::make('insurance')
-                ->label('Insurance Ref Number')
-                ->visible(function (Forms\Get $get) {
-                    return $get('insurance_service') === 'yes';
-                })
-                ->required(),
-            Forms\Components\FileUpload::make('insurance_document')
-                ->label('Insurance Document')
-                ->visible(function (Forms\Get $get) {
-                    return $get('insurance_service') === 'yes';
-                })
-                ->required(),
-            Forms\Components\FileUpload::make('trading_license')
-                ->label('Trading License'),
-            Forms\Components\FileUpload::make('business_permit')
-                ->label('Business Permit'),
-            Forms\Components\FileUpload::make('certificate_of_incorporation')
-                ->label('Certificate of Incorporation'),
-            Forms\Components\FileUpload::make('health_certificate')
-                ->label('Health Certificate'),
-            Forms\Components\TextInput::make('registration_number')
-                ->label('Registration Number')
-                ->maxLength(255),
-            Forms\Components\Select::make('record_maintained')
-                ->options([
-                    'none' => 'None',
-                    'audited_books' => 'Audited Books',
-                    'black_book' => 'Black Book',
-                    'digital_book' => 'Digital Book',
-                ])
-                ->required(),
-            ]),
         ];
     }
 
     public static function getBusinessOverviewInformation(): array
     {
         return [
+            Card::make()
+            ->relationship('business_overview')
+            ->schema([
             Fieldset::make('Business Overview')
                     ->schema([
                         Forms\Components\TextInput::make('current_stock')
@@ -352,19 +248,20 @@ class BusinessResource extends Resource
                             ->label('Cost of Sales')
                             ->readOnly()
                             ->default(0)
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
-                            self::updateGrossProfit($get, $set))
+                            ->live()
+                            ->placeholder(function (Forms\Get $get, Forms\Set $set, ?int $state) {
+                                return $get('current_stock') + $get('average_weekly_purchase') - $get('average_weekly_stock_balance');
+                            })
                             ->numeric()
                             ->required(),
                         Forms\Components\TextInput::make('gross_profit')
                             ->prefix('KES')
-                            ->label('Gross Profit')
+                            ->label('Weekly Gross Profit')
                             ->numeric()
                             ->default(0)
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
-                            self::updateNetProfit($get, $set))
+                            ->placeholder(function (Forms\Get $get, Forms\Set $set, ?int $state) {
+                                return $get('average_weekly_sales') - $get('cost_of_sales');
+                            })
                             ->readOnly()
                             ->required(),
                         
@@ -431,7 +328,7 @@ class BusinessResource extends Resource
                             ->readOnly()
                             ->default(0)
                             ->label('Household Total')
-                            ->live(onBlur: true)
+                            ->live()
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateNetProfit($get, $set, $state))
                             ->prefix('KES')
@@ -536,7 +433,7 @@ class BusinessResource extends Resource
                             ->default(0)
                             ->numeric()
                             ->readOnly()
-                            ->live(onBlur: true)
+                            ->live()
                             ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set, ?int $state) => 
                             self::updateNetProfit($get, $set, $state))
                             ->required(),
@@ -546,17 +443,61 @@ class BusinessResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('net_profit')
                         ->prefix('KES')
-                        ->label('Net Profit')
+                        ->live()
+                        ->label('Weekly Net Profit')
                         ->placeholder(function (Forms\Get $get, Forms\Set $set, ?int $state) {
                             $get('gross_profit');
                             $hsTotal= $get('hs_total');
                             $bsTotal= $get('bs_total');
-                            $set('net_profit', $get('gross_profit') - $hsTotal - $bsTotal);
-                            return $get('gross_profit') - $hsTotal - $bsTotal;
-                        })
+                            $profit = $get('gross_profit') - $hsTotal - $bsTotal;
+                            $set('net_profit', $profit);
+                            // Calculate loan affordability based on net profit
+                              if ($profit > 0) {
+                                  // Weekly net profit
+                                  $weeklyNetProfit = $profit;
+                                  
+                                  // Calculate 75% of weekly net profit (affordable weekly installment)
+                                  $affordableWeeklyInstallment = $weeklyNetProfit * 0.75;
+                                  
+                                  // Calculate affordable daily installment
+                                  $affordableDailyInstallment = $affordableWeeklyInstallment / 7;
+                                  
+                                  // Calculate monthly payable (P+I)
+                                  $monthlyPayable = $affordableDailyInstallment * 30;
+                                  
+                                  // Calculate principal (P = monthly payable - 30% interest)
+                                  //$interestAmount = $monthlyPayable * 0.30;
+                                  $principal = $monthlyPayable * (100/130);
+                                  
+                                  // Round to nearest 100
+                                  $suggestedLoanLimit = round($principal, -2);
+                                  
+                                  // Update affordability field
+                                  $set('affordability', $suggestedLoanLimit);
+                              } else {
+                                  // If net profit is zero or negative, set affordability to zero
+                                  $set('affordability', 0);
+                              }
+                          return $profit;
+                      })
                         ->numeric()
                         ->readOnly()
                         ->required(),
+                    Forms\Components\TextInput::make('affordability')
+                      ->label('Monthly Affordability')
+                      ->numeric()
+                      ->readOnly()
+                      ->placeholder(function (Forms\Get $get, Forms\Set $set, ?int $state) {
+                        $netProfit = $get('net_profit');
+                        $affordableWeeklyInstallment = $netProfit * 0.75;
+                        $affordableDailyInstallment = $affordableWeeklyInstallment / 7;
+                        $monthlyPayable = $affordableDailyInstallment * 30;
+                        $principal = $monthlyPayable * (100/130);
+                        $suggestedLoanLimit = round($principal, -2);
+                        return $suggestedLoanLimit;
+                      })
+                      ->prefix('KES')
+                      ,
                     ])
                     ->columns(2),
 
@@ -564,12 +505,22 @@ class BusinessResource extends Resource
                     ->schema([
                         Forms\Components\FileUpload::make('mpesa_statement')
                             ->label('Mpesa Statement')
+                            ->acceptedFileTypes(['application/pdf'])
                             ->required(),
                         Forms\Components\TextInput::make('mpesa_code')
                             ->label('Mpesa Code')
                             ->required(),
                     ])
                     ->columns(2),
+                Fieldset::make('Mpesa Summary')
+                    ->schema([
+                        Forms\Components\FileUpload::make('mpesa_summary')
+                            ->label('Mpesa Summary')
+                            ->acceptedFileTypes(['application/pdf'])
+                            ->required(),
+                    ])
+                    ->columns(2),
+            ])
 
         ];
     }
@@ -757,7 +708,18 @@ class BusinessResource extends Resource
 
     private static function updateBusinessExpense(Forms\Get $get, Forms\Set $set):void
     {
-        $set('bs_total', $get('bs_rent') + $get('bs_electricity') + $get('bs_license') + $get('bs_transport') + $get('bs_wages') + $get('bs_contributions') + $get('bs_loan_repayment') + $get('bs_other_drawings') + $get('bs_spoilts_goods') + $get('owner_salary'));
+        $set('bs_total', 
+            floatval($get('bs_rent')) + 
+            floatval($get('bs_electricity')) + 
+            floatval($get('bs_license')) + 
+            floatval($get('bs_transport')) + 
+            floatval($get('bs_wages')) + 
+            floatval($get('bs_contributions')) + 
+            floatval($get('bs_loan_repayment')) + 
+            floatval($get('bs_other_drawings')) + 
+            floatval($get('bs_spoilts_goods')) + 
+            floatval($get('owner_salary'))
+        );
     }
 
     private static function updateCostOfSales(Forms\Get $get, Forms\Set $set):void

@@ -1,111 +1,26 @@
 <?php
 
-namespace App\Listeners;
+namespace App\Jobs;
 
-use App\Models\PaymentType;
-use App\Models\Transaction;
-use App\Models\JournalEntry;
-use App\Events\LoanDisbursed;
-use App\Models\ClientAccount;
-use App\Models\JournalEntries;
-use Illuminate\Support\Carbon;
-use App\Models\Loan\LoanTransaction;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Queue\InteractsWithQueue;
-use App\Models\Loan\LoanRepaymentSchedule;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 
-class UpdateLoanSchedule
+class CreateLoanScheduleJob implements ShouldQueue
 {
-    /**
-     * Create the event listener.
-     */
-    public function __construct()
-    {
-        //
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public function __construct(public $loan) {
+        $this->loan = $loan;
     }
 
-    /**
-     * Handle the event.
-     */
-    /**
-     * Determine the period interest rate based on the default interest rate and frequency types
-     * 
-     * @param float $default_interest_rate The interest rate as a percentage (e.g., 1 for 1%)
-     * @param string $repayment_frequency_type The frequency of repayments (days, weeks, months, years)
-     * @param string $interest_rate_type How the interest rate is expressed (day, week, month, year)
-     * @param int $repayment_frequency Number of periods in each payment cycle
-     * @param int $days_in_year Number of days in a year
-     * @param int $days_in_month Number of days in a month
-     * @param int $weeks_in_year Number of weeks in a year
-     * @param int $weeks_in_month Number of weeks in a month
-     * @return float The calculated period interest rate as a decimal
-     */
-    public function determine_period_interest_rate($default_interest_rate, $repayment_frequency_type, $interest_rate_type, $repayment_frequency = 1, $days_in_year = 365, $days_in_month = 30, $weeks_in_year = 52, $weeks_in_month = 4)
+    
+
+    public function handle()
     {
-        $interest_rate = $default_interest_rate;
-        
-        // For daily charging products (e.g., 1% daily)
-        if ($interest_rate_type == 'day') {
-            // If interest is charged daily but repayment is not daily, convert accordingly
-            if ($repayment_frequency_type == 'weeks') {
-                $interest_rate = $interest_rate * 7; // Daily rate * 7 days
-            } elseif ($repayment_frequency_type == 'months') {
-                $interest_rate = $interest_rate * $days_in_month; // Daily rate * days in month
-            } elseif ($repayment_frequency_type == 'years') {
-                $interest_rate = $interest_rate * $days_in_year; // Daily rate * days in year
-            }
-            // If repayment is also daily, no conversion needed
-        }
-        // For weekly charging products
-        elseif ($interest_rate_type == 'week') {
-            if ($repayment_frequency_type == 'days') {
-                $interest_rate = $interest_rate / 7; // Weekly rate / 7 days
-            } elseif ($repayment_frequency_type == 'months') {
-                $interest_rate = $interest_rate * $weeks_in_month; // Weekly rate * weeks in month
-            } elseif ($repayment_frequency_type == 'years') {
-                $interest_rate = $interest_rate * $weeks_in_year; // Weekly rate * weeks in year
-            }
-            // If repayment is also weekly, no conversion needed
-        }
-        // For monthly charging products
-        elseif ($interest_rate_type == 'month') {
-            if ($repayment_frequency_type == 'days') {
-                $interest_rate = $interest_rate / $days_in_month; // Monthly rate / days in month
-            } elseif ($repayment_frequency_type == 'weeks') {
-                $interest_rate = $interest_rate / $weeks_in_month; // Monthly rate / weeks in month
-            } elseif ($repayment_frequency_type == 'years') {
-                $interest_rate = $interest_rate * 12; // Monthly rate * 12 months
-            }
-            // If repayment is also monthly, no conversion needed
-        }
-        // For yearly charging products
-        elseif ($interest_rate_type == 'year') {
-            if ($repayment_frequency_type == 'days') {
-                $interest_rate = $interest_rate / $days_in_year; // Yearly rate / days in year
-            } elseif ($repayment_frequency_type == 'weeks') {
-                $interest_rate = $interest_rate / $weeks_in_year; // Yearly rate / weeks in year
-            } elseif ($repayment_frequency_type == 'months') {
-                $interest_rate = $interest_rate / 12; // Yearly rate / 12 months
-            }
-            // If repayment is also yearly, no conversion needed
-        }
-        
-        // Convert percentage to decimal and adjust for repayment frequency
-        return $interest_rate * $repayment_frequency / 100;
-    }
-
-    public function determine_amortized_payment($interest_rate, $balance, $period)
-    {
-         $monthlyPayment = ($balance * $interest_rate) / (1 - pow(1 + $interest_rate, -$period));
-
-        return $monthlyPayment;
-
-    }
-
-    public function handle(LoanDisbursed $event): void
-    {
-        $loan = $event->loan;
+        $loan = $this->loan;
        
         $client_account = ClientAccount::where('client_id', $loan->client_id)->first();
         $interest_rate = $this->determine_period_interest_rate($loan->interest_rate, $loan->repayment_frequency_type, $loan->interest_rate_type, $loan->repayment_frequency);
@@ -527,7 +442,7 @@ class UpdateLoanSchedule
 
                          //credit interest accrued account
                         //  $journal_entry = new JournalEntries();
-                        //  $journal_entry->transaction_id = $journal_transaction_id;
+                        //  $journal_entry->transaction_id = $disbursal_transaction_id;
                         //  $journal_entry->type = 'credit';
                         //  $journal_entry->branch_id = $loan->branch_id;
                         //  $journal_entry->amount = $loan->interest_disbursed_derived;
@@ -537,6 +452,7 @@ class UpdateLoanSchedule
 
                         
                         // Check if client still has balance after all fees and use it for loan repayment
+                        // Check if client account exists and has balance before proceeding
                         if ($client_account && $client_account->balance > 0) {
                             // Determine amount to use for repayment (available balance)
                             $repaymentAmount = $client_account->balance;
@@ -585,181 +501,81 @@ class UpdateLoanSchedule
                         }
 
                     }
+    }
 
-            }
-
-
-            
-                          
-    /**
-     * Handle the special Wezesha loan product schedule calculation
+     /**
+     * Determine the period interest rate based on the default interest rate and frequency types
      * 
-     * Wezesha loan has the following characteristics:
-     * - Loan amount: 7,000-30,000 KSH
-     * - Repayment period: 1-30 days (daily or weekly basis)
-     * - Interest: 1% per day of loan amount
-     * - Minimum interest: 14% (14 days interest)
-     * - Interest structure:
-     *   - Fixed at 14% between disbursement and day 14
-     *   - After day 14, accrues daily at 1% per day
+     * @param float $default_interest_rate The interest rate as a percentage (e.g., 1 for 1%)
+     * @param string $repayment_frequency_type The frequency of repayments (days, weeks, months, years)
+     * @param string $interest_rate_type How the interest rate is expressed (day, week, month, year)
+     * @param int $repayment_frequency Number of periods in each payment cycle
+     * @param int $days_in_year Number of days in a year
+     * @param int $days_in_month Number of days in a month
+     * @param int $weeks_in_year Number of weeks in a year
+     * @param int $weeks_in_month Number of weeks in a month
+     * @return float The calculated period interest rate as a decimal
      */
-    private function handleWezeshaLoanSchedule($loan, $payment_from_date, $next_payment_date)
+    public function determine_period_interest_rate($default_interest_rate, $repayment_frequency_type, $interest_rate_type, $repayment_frequency = 1, $days_in_year = 365, $days_in_month = 30, $weeks_in_year = 52, $weeks_in_month = 4)
     {
-        // Calculate the total loan term in days
-        $loanTermDays = $loan->loan_term;
-        if ($loan->repayment_frequency_type == 'weeks') {
-            $loanTermDays = $loan->loan_term * 7;
+        $interest_rate = $default_interest_rate;
+        
+        // For daily charging products (e.g., 1% daily)
+        if ($interest_rate_type == 'day') {
+            // If interest is charged daily but repayment is not daily, convert accordingly
+            if ($repayment_frequency_type == 'weeks') {
+                $interest_rate = $interest_rate * 7; // Daily rate * 7 days
+            } elseif ($repayment_frequency_type == 'months') {
+                $interest_rate = $interest_rate * $days_in_month; // Daily rate * days in month
+            } elseif ($repayment_frequency_type == 'years') {
+                $interest_rate = $interest_rate * $days_in_year; // Daily rate * days in year
+            }
+            // If repayment is also daily, no conversion needed
+        }
+        // For weekly charging products
+        elseif ($interest_rate_type == 'week') {
+            if ($repayment_frequency_type == 'days') {
+                $interest_rate = $interest_rate / 7; // Weekly rate / 7 days
+            } elseif ($repayment_frequency_type == 'months') {
+                $interest_rate = $interest_rate * $weeks_in_month; // Weekly rate * weeks in month
+            } elseif ($repayment_frequency_type == 'years') {
+                $interest_rate = $interest_rate * $weeks_in_year; // Weekly rate * weeks in year
+            }
+            // If repayment is also weekly, no conversion needed
+        }
+        // For monthly charging products
+        elseif ($interest_rate_type == 'month') {
+            if ($repayment_frequency_type == 'days') {
+                $interest_rate = $interest_rate / $days_in_month; // Monthly rate / days in month
+            } elseif ($repayment_frequency_type == 'weeks') {
+                $interest_rate = $interest_rate / $weeks_in_month; // Monthly rate / weeks in month
+            } elseif ($repayment_frequency_type == 'years') {
+                $interest_rate = $interest_rate * 12; // Monthly rate * 12 months
+            }
+            // If repayment is also monthly, no conversion needed
+        }
+        // For yearly charging products
+        elseif ($interest_rate_type == 'year') {
+            if ($repayment_frequency_type == 'days') {
+                $interest_rate = $interest_rate / $days_in_year; // Yearly rate / days in year
+            } elseif ($repayment_frequency_type == 'weeks') {
+                $interest_rate = $interest_rate / $weeks_in_year; // Yearly rate / weeks in year
+            } elseif ($repayment_frequency_type == 'months') {
+                $interest_rate = $interest_rate / 12; // Yearly rate / 12 months
+            }
+            // If repayment is also yearly, no conversion needed
         }
         
-        $balance = round($loan->approved_amount, $loan->decimals);
-        $dailyInterestRate = 0.01; // 1% daily interest rate
-        $minimumInterestDays = 14;
-        $minimumInterestAmount = round($loan->approved_amount * $dailyInterestRate * $minimumInterestDays, $loan->decimals);
-        
-        // Determine if this is a daily or weekly repayment schedule
-        $isDaily = ($loan->repayment_frequency_type == 'days');
-        $period = $isDaily ? $loanTermDays : ceil($loanTermDays / 7);
-        
-        $disbursed_date = Carbon::parse($loan->disbursed_on_date);
-        $payment_from_date = $disbursed_date->format('Y-m-d');
-        $next_payment_date = Carbon::parse($loan->first_payment_date);
-        
-        $total_principal = 0;
-        $total_interest = 0;
-        
-        // Calculate principal per installment
-        $principalPerInstallment = round($loan->approved_amount / $period, $loan->decimals);
-        
-        // For tracking days since disbursement
-        $daysSinceDisbursement = 0;
-        
-        for ($i = 1; $i <= $period; $i++) {
-            $loan_repayment_schedule = new LoanRepaymentSchedule();
-            $loan_repayment_schedule->created_by_id = Auth::id();
-            $loan_repayment_schedule->loan_id = $loan->id;
-            $loan_repayment_schedule->installment = $i;
-            $loan_repayment_schedule->due_date = $next_payment_date->format('Y-m-d');
-            $loan_repayment_schedule->from_date = $payment_from_date;
-            $date = explode('-', $next_payment_date->format('Y-m-d'));
-            $loan_repayment_schedule->month = $date[1];
-            $loan_repayment_schedule->year = $date[0];
-            
-            // Calculate days in this installment period
-            $daysInPeriod = $isDaily ? 1 : 7;
-            
-            // Calculate interest for this period
-            $interestForPeriod = 0;
-            
-            // For each day in this period
-            for ($day = 0; $day < $daysInPeriod; $day++) {
-                $currentDay = $daysSinceDisbursement + $day;
-                
-                // If we're still within the first 14 days, use the minimum interest
-                if ($currentDay < $minimumInterestDays) {
-                    // Interest is already accounted for in the minimum
-                    continue;
-                } else {
-                    // After 14 days, add 1% daily interest
-                    $interestForPeriod += round($loan->approved_amount * $dailyInterestRate, $loan->decimals);
-                }
-            }
-            
-            // Update days since disbursement
-            $daysSinceDisbursement += $daysInPeriod;
-            
-            // Set principal for this installment
-            if ($i == $period) {
-                // Last installment - account for any rounding issues
-                $loan_repayment_schedule->principal = round($balance, $loan->decimals);
-            } else {
-                $loan_repayment_schedule->principal = $principalPerInstallment;
-            }
-            
-            // Set interest for this installment
-            if ($i == 1 && $loanTermDays <= $minimumInterestDays) {
-                // If loan term is less than or equal to 14 days, charge the minimum interest on the first installment
-                $loan_repayment_schedule->interest = $minimumInterestAmount;
-            } else if ($i == 1) {
-                // First installment for loans longer than 14 days
-                // Calculate how much of the minimum interest to allocate to first installment
-                $firstInstallmentDays = $isDaily ? 1 : 7;
-                $proportionOfMinimum = min(1, $firstInstallmentDays / $minimumInterestDays);
-                $loan_repayment_schedule->interest = round($minimumInterestAmount * $proportionOfMinimum, $loan->decimals);
-            } else if ($daysSinceDisbursement <= $minimumInterestDays) {
-                // Installments that fall within the first 14 days
-                $daysInMinimumPeriod = min($daysInPeriod, $minimumInterestDays - ($daysSinceDisbursement - $daysInPeriod));
-                $proportionOfMinimum = $daysInMinimumPeriod / $minimumInterestDays;
-                $loan_repayment_schedule->interest = round($minimumInterestAmount * $proportionOfMinimum, $loan->decimals);
-            } else {
-                // Installments after 14 days
-                $loan_repayment_schedule->interest = $interestForPeriod;
-            }
-            
-            // Update balance
-            $balance -= $loan_repayment_schedule->principal;
-            
-            // Update payment dates
-            $payment_from_date = Carbon::parse($next_payment_date)->addDay()->format('Y-m-d');
-            if ($isDaily) {
-                $next_payment_date->addDay();
-            } else {
-                $next_payment_date->addWeek();
-            }
-            
-            // Update totals
-            $total_principal += $loan_repayment_schedule->principal;
-            $total_interest += $loan_repayment_schedule->interest;
-            $loan_repayment_schedule->total_due = $loan_repayment_schedule->principal + $loan_repayment_schedule->interest;
-            $loan_repayment_schedule->save();
-        }
-        
-        // Update loan details
-        $loan->expected_maturity_date = $next_payment_date->format('Y-m-d');
-        $loan->principal_disbursed_derived = $total_principal;
-        $loan->interest_disbursed_derived = $total_interest;
-        
-        // Create journal transaction
-        $journal_transaction = new Transaction();
-        $journal_transaction->loan_id = $loan->id;
-        $journal_transaction->branch_id = $loan->branch_id;
-        $journal_transaction->chart_of_account_id = $loan->fund_id;
-        $journal_transaction->type = 'journal';
-        $journal_transaction->description = 'Wezesha Loan';
-        $journal_transaction->amount = $loan->approved_amount;
-        $journal_transaction->posted_at = date('Y-m-d');
-        $journal_transaction->save();
-        $journal_transaction_id = $journal_transaction->id;
-        
-        //add disbursal transaction
-        $loan_transaction = new LoanTransaction();
-        $loan_transaction->created_by_id = Auth::id();
-        $loan_transaction->loan_id = $loan->id;
-        $loan_transaction->name = 'Disbursement';
-        $loan_transaction->account_number = $loan->account_number;
-        $loan_transaction->branch_id = $loan->branch_id;
-        $loan_transaction->loan_transaction_type_id = 1;
-        $loan_transaction->submitted_on = $loan->disbursed_on_date;
-        $loan_transaction->created_on = date('Y-m-d');
-        $loan_transaction->amount = $loan->approved_amount;
-        $loan_transaction->debit = $loan->approved_amount;
-        $loan_transaction->save();
-        $disbursal_transaction_id = $loan_transaction->id;
-        
-        //add interest transaction
-        $loan_transaction = new LoanTransaction();
-        $loan_transaction->created_by_id = Auth::id();
-        $loan_transaction->loan_id = $loan->id;
-        $loan_transaction->account_number = $loan->account_number;
-        $loan_transaction->branch_id = $loan->branch_id;
-        $loan_transaction->name = 'Interest Applied';
-        $loan_transaction->loan_transaction_type_id = 11;
-        $loan_transaction->submitted_on = $loan->disbursed_on_date;
-        $loan_transaction->created_on = date('Y-m-d');
-        $loan_transaction->amount = $total_interest;
-        $loan_transaction->debit = $total_interest;
-        $loan_transaction->save();
-        
-        return true;
-    }
+        // Convert percentage to decimal and adjust for repayment frequency
+        return $interest_rate * $repayment_frequency / 100;
     }
 
+    public function determine_amortized_payment($interest_rate, $balance, $period)
+    {
+         $monthlyPayment = ($balance * $interest_rate) / (1 - pow(1 + $interest_rate, -$period));
+
+        return $monthlyPayment;
+
+    }
+
+}

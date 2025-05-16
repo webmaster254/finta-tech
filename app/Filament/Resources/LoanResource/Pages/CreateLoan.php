@@ -60,21 +60,29 @@ class CreateLoan extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
 {
-    // $loanProduct = LoanProduct::find($data['loan_product_id']);
-    // if ($loanProduct->maximum_principal < $data['principal']) {
-    //     Notification::make()
-    //         ->warning()
-    //         ->title('The principal Amount cannot be greater than the maximum principal for this loan product')
-    //         ->body('Enter a value less than or equal to '.$loanProduct->maximum_principal)
-    //         ->persistent()
 
-    //         ->send();
+    //save loan charges
+    $loanProduct = LoanProduct::find($data['loan_product_id']);
+  
+    if ($loanProduct->maximum_principal < $data['principal']) {
+        Notification::make()
+            ->warning()
+            ->title('The principal Amount cannot be greater than the maximum principal for this loan product')
+            ->body('Enter a value less than or equal to '.$loanProduct->maximum_principal)
+            ->persistent()
 
-    //     $this->halt();
-    // }
+            ->send();
+
+        $this->halt();
+    }
     $data['applied_amount'] = $data['principal'];
-
+ 
     return $data;
+}
+
+protected function afterCreate(): void
+{
+    // Runs after the form fields are saved to the database.
 }
 
 

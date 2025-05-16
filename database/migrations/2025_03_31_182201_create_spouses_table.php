@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('photo')->nullable();
             $table->string('consent_form')->nullable();
             $table->string('consent_signature')->nullable();
+            $table->string('consent_signature_upload')->nullable();
             $table->timestamps();
         });
     }

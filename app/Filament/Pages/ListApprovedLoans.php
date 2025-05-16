@@ -112,7 +112,7 @@ class ListApprovedLoans extends Page implements HasTable
                                 'first_payment_date' => $formdata['first_repayment_date'],
                         ]);
                         $record->save();
-                        event(new LoanDisbursed($record));
+                        event(new LoanDisbursed($record,$formdata));
                         SendLoanDisbursedNotificationJob::dispatch($record);
                            Notification::make()
                              ->title('Loan Disbursed Successfully')

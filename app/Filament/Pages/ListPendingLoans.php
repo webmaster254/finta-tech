@@ -115,6 +115,7 @@ class ListPendingLoans extends Page implements HasTable
                     })
                     ->fillForm(fn (Loan $record): array => [
                         'applied_amount' => $record->applied_amount,
+                        'principal' => $record->principal,
                         'loan_product_id' => $record->loan_product->name,
                         'client_id' => $record->client->full_name,
                         'loan_account_number' => $record->loan_account_number,
@@ -127,6 +128,7 @@ class ListPendingLoans extends Page implements HasTable
                         'interest_methodology' => $record->interest_methodology,
                         'amortization_method' => $record->amortization_method,
                         'first_repayment_date' => $record->expected_first_payment_date,
+
                         'status' => $record->status,
                         'guarantors' => $record->guarantors && $record->guarantors->count() > 0 ? $record->guarantors->map(function($guarantor) {
                             return [

@@ -6,6 +6,7 @@ use Filament\Forms;
 use Filament\Tables;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
+use App\Models\BusinessOverview;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Fieldset;
 use Illuminate\Database\Eloquent\Model;
@@ -317,8 +318,10 @@ class BusinessRelationManager extends RelationManager
                     ->schema([
                         Forms\Components\FileUpload::make('mpesa_statement')
                             ->label('Mpesa Statement')
+                            ->acceptedFileTypes(['application/pdf'])
                             ->required(),
                         Forms\Components\TextInput::make('mpesa_code')
+                        ->acceptedFileTypes(['application/pdf'])
                             ->label('Mpesa Code')
                             ->required(),
                     ])
@@ -358,29 +361,50 @@ class BusinessRelationManager extends RelationManager
                     ->label('Net Profit')
                     ->prefix('KES ')
                     ->numeric(),
+                Tables\Columns\TextColumn::make('monthly_affordability')
+                    ->label('Loan Affordability')
+                    ->prefix('KES ')
+                    ->getStateUsing(function (BusinessOverview $record) {
+                         $p= $record->net_profit * 0.75;
+                         $affordability = ($p/7)*30;
+                        return $affordability;
+                    })
+                    ->numeric(),
                 Tables\Columns\TextColumn::make('affordability')
-                    ->label('Affordability')
+                    ->label('Loan Limit')
                     ->prefix('KES ')
                     ->numeric(),
+                Tables\Columns\TextColumn::make('mpesa_code')
+                    ->label('Mpesa Code'),
+                Tables\Columns\TextColumn::make('mpesa_statement')
+                    ->label('Mpesa Statement')
+                    ->url(function (BusinessOverview $record) {
+                        return $record->mpesa_statement;
+                    }),
+                Tables\Columns\TextColumn::make('mpesa_summary')
+                    ->label('Mpesa Summary')
+                    ->url(function (BusinessOverview $record) {
+                        return $record->mpesa_summary;
+                    }),
             ])
             ->filters([
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make()
-                ->createAnother(false)
-                ->successNotificationTitle('Business Overview added')
-                ->label('Add Business Overview')
-                ->icon('heroicon-o-document-text')
-                ->modalHeading('Add Business Overview'),
+                // Tables\Actions\CreateAction::make()
+                // ->createAnother(false)
+                // ->successNotificationTitle('Business Overview added')
+                // ->label('Add Business Overview')
+                // ->icon('heroicon-o-document-text')
+                // ->modalHeading('Add Business Overview'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                // Tables\Actions\EditAction::make(),
+                // Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    //Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }

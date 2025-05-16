@@ -23,6 +23,7 @@ class Spouse extends Model
         'id_back',
         'photo',
         'consent_signature',
+        'consent_signature_upload',
         'consent_form'
     ];
 

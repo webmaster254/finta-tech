@@ -50,6 +50,7 @@ class BusinessOverview extends Model
         'affordability',
         'mpesa_statement',
         'mpesa_code',
+        'mpesa_summary',
     ];
 
     public function business()

@@ -9,7 +9,7 @@ use App\Filament\Resources\BusinessResource;
 
 class CreateBusiness extends CreateRecord
 {
-    //use CreateRecord\Concerns\HasWizard;
+    use CreateRecord\Concerns\HasWizard;
     protected static string $resource = BusinessResource::class;
 
     protected function getRedirectUrl(): string
@@ -17,13 +17,24 @@ class CreateBusiness extends CreateRecord
     return $this->getResource()::getUrl('view', ['record' => $this->getRecord()]);
 }
 
-// protected function getSteps(): array
-//     {
-//         return [
-//             Step::make('General Business Information')
-//                 ->schema(BusinessResource::getGeneralBusinessInformation()),
-//             // Step::make('Business overview Information')
-//             //     ->schema(BusinessResource::getBusinessOverviewInformation()),
-//         ];
-//     }
+protected function getSteps(): array
+    {
+        return [
+            Step::make('General Business Information')
+                ->schema(BusinessResource::getGeneralBusinessInformation())
+               ,
+            Step::make('Business overview Information')
+                ->schema(BusinessResource::getBusinessOverviewInformation())
+                ->afterValidation(function (Step $component) {
+                    $validated = $component->getChildComponentContainer()->validate();
+                        
+                    dd($validated);
+               
+            }),
+            Step::make('Summary')
+            ->schema([
+                
+            ]),
+        ];
+    }
 }

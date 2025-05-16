@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\LoanResource\Pages;
 
 use Filament\Actions;
+use App\Models\Loan\LoanCharge;
+use App\Models\Loan\LoanLinkedCharge;
 use App\Filament\Resources\LoanResource;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
@@ -20,6 +22,7 @@ class EditLoan extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+    
         //check if status is submitted and update to pending
         if($this->getRecord()->status == 'submitted') {
             $data['status'] = 'pending';

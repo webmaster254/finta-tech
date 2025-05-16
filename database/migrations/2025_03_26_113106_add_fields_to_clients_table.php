@@ -27,7 +27,9 @@ return new class extends Migration
             $table->string('id_back')->nullable();
             $table->string('hashed_mobile')->nullable();
             $table->string('signature')->nullable();
+            $table->string('signature_upload')->nullable();
             $table->string('privacy_signature')->nullable();
+            $table->string('privacy_signature_upload')->nullable();
             $table->string('reg_form')->nullable();
             $table->boolean('id_verified')->default(false);
             $table->boolean('address_verified')->default(false);
@@ -60,7 +62,9 @@ return new class extends Migration
                 'id_back',
                 'hashed_mobile',
                 'signature',
+                'signature_upload',
                 'privacy_signature',
+                'privacy_signature_upload',
                 'id_verified',
                 'address_verified',
                 'signature_confirmed',

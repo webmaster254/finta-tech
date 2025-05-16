@@ -14,9 +14,12 @@ use Filament\Tables\Table;
 use Filament\Infolists\Infolist;
 use Dotswan\MapPicker\Fields\Map;
 use Infolists\Components\TextEntry;
+use Filament\Forms\Components\Repeater;
 use Dotswan\MapPicker\Infolists\MapEntry;
 use Filament\Forms\Components\FileUpload;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\RepeatableEntry;
 use Awcodes\Curator\Components\Forms\CuratorPicker;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Awcodes\Curator\Components\Tables\CuratorColumn;
@@ -34,92 +37,102 @@ class AddressesRelationManager extends RelationManager
     {
         return $form
             ->schema([
-                
-                Forms\Components\Hidden::make('client_id')
-                    ->default($this->getOwnerRecord()->id),
+                Repeater::make('address')
+                    ->columns(3)
+                    ->addActionLabel('Add Address')
+                    ->label('Addresses')
+                    ->collapsible()
+                    ->defaultItems(2)
+                    ->minItems(2)
+                    ->maxItems(5)
+                    ->itemLabel(fn (array $state): ?string => $state['address_type'] ?? null)
+                    ->schema([
                     Forms\Components\Select::make('address_type')
-                    ->label('Address Type')
-                    ->options([
-                        'residential' => 'Residential',
-                        'business' => 'Business',
-            ])
-            ->required()
-            ->nullable(),
-        Country::make('country')
-            ->label('Country')
-            ->required(),
-       Forms\Components\Select::make('county_id')
-            ->label('County')
-            ->options(County::all()->pluck('name', 'id'))
-            ->live()
-            ->required(),
-        Forms\Components\Select::make('sub_county_id')
-            ->label('Sub County')
-            ->live()
-            ->options(fn (Get $get) => SubCounty::query()
-                    ->where('county_id', $get('county_id'))
-                    ->get()
-                    ->pluck('name', 'id'))
-            ->required(),
-        Forms\Components\Select::make('ward_id')
-           ->options(fn (Get $get) => Town::query()
-                    ->where('sc_id', $get('sub_county_id'))
-                    ->get()
-                    ->pluck('name', 'id'))
-            ->label('Ward')
-            ->required(),
-        Forms\Components\TextInput::make('village')
-            ->maxLength(100),
-        Forms\Components\TextInput::make('street')
-            ->maxLength(100)
-            ->required(),
-        Forms\Components\TextInput::make('landmark')
-            ->maxLength(255)
-            ->required(),
-        Forms\Components\TextInput::make('building')
-            ->maxLength(100)
-            ->required()    ,
-        Forms\Components\TextInput::make('floor_no')
-            ->maxLength(20),
-        Forms\Components\TextInput::make('house_no')
-            ->maxLength(20),
-        Forms\Components\TextInput::make('estate')
-            ->maxLength(100),
-        
-        Geocomplete::make('location')
-            ->label('Location')
-            ->geolocate()
-            ->updateLatLng()
-            ->isLocation()
-            ->geocodeOnLoad()
-            ->prefix('Choose:')
-            ->required(),
-        Forms\Components\TextInput::make('latitude')
-        ->readOnly(),
-        Forms\Components\TextInput::make('longitude')
-        ->readOnly(),
-        Map::make('location')
-            ->reactive()
-            ->afterStateUpdated(function ($state, callable $get, callable $set) {
-                $set('latitude', $state['lat']);
-                $set('longitude', $state['lng']);
-            }),
-        FileUpload::make('image')
-            ->label('Image')
-            ->image()
-            ->imageEditor()
-            ->imagePreviewHeight('250')
-            ->loadingIndicatorPosition('left')
-            ->panelAspectRatio('2:1')
-            ->panelLayout('integrated')
-            ->removeUploadedFileButtonPosition('right')
-            ->uploadButtonPosition('left')
-            ->uploadProgressIndicatorPosition('left')
-            ->required(), 
-        Forms\Components\Textarea::make('image_description')
-            ->maxLength(20),    
-              
-                
+                                ->label('Address Type')
+                                ->options([
+                                    'residential' => 'Residential',
+                                    'business' => 'Business',
+                        ])
+                        ->required()
+                        ->nullable(),
+                    Country::make('country')
+                        ->label('Country')
+                        ->required(),
+                Forms\Components\Select::make('county_id')
+                        ->label('County')
+                        ->options(County::all()->pluck('name', 'id'))
+                        ->live()
+                        ->required(),
+                    Forms\Components\Select::make('sub_county_id')
+                        ->label('Sub County')
+                        ->live()
+                        ->options(fn (Get $get) => SubCounty::query()
+                                ->where('county_id', $get('county_id'))
+                                ->get()
+                                ->pluck('name', 'id'))
+                        ->required(),
+                    Forms\Components\Select::make('ward_id')
+                    ->options(fn (Get $get) => Town::query()
+                                ->where('sc_id', $get('sub_county_id'))
+                                ->get()
+                                ->pluck('name', 'id'))
+                        ->label('Ward')
+                        ->required(),
+                    Forms\Components\TextInput::make('village')
+                        ->maxLength(100),
+                    Forms\Components\TextInput::make('street')
+                        ->maxLength(100)
+                        ->required(),
+                    Forms\Components\TextInput::make('landmark')
+                        ->maxLength(255)
+                        ->required(),
+                    Forms\Components\TextInput::make('building')
+                        ->maxLength(100)
+                        ->required()    ,
+                    Forms\Components\TextInput::make('floor_no')
+                        ->maxLength(20),
+                    Forms\Components\TextInput::make('house_no')
+                        ->maxLength(20),
+                    Forms\Components\TextInput::make('estate')
+                        ->maxLength(100),
+                    Map::make('location')
+                        ->liveLocation(true, true, 10000)  // Updates live location every 10 seconds
+                        ->showMarker(true)
+                        ->markerColor("#3b82f6")
+                        ->markerIconSize([36, 36])
+                        ->markerIconAnchor([18, 36])
+                        ->clickable(true)
+                        ->draggable(true)
+                        ->showZoomControl(true)
+                        ->showMyLocationButton(true)
+                        ->afterStateUpdated(function (Set $set, ?array $state): void {
+                            $set('latitude', $state['lat']);
+                            $set('longitude', $state['lng']);
+                        
+                        })
+                        ->afterStateHydrated(function ($state, $record, Set $set): void {
+                            $set('location', ['lat' => $record?->latitude, 'lng' => $record?->longitude]);
+                        })
+                        ->required(),
+                    Forms\Components\TextInput::make('latitude')
+                    ->readOnly(),
+                    Forms\Components\TextInput::make('longitude')
+                    ->readOnly(),
+                    FileUpload::make('image')
+                        ->label('Image')
+                        ->image()
+                        ->imageEditor()
+                        ->imagePreviewHeight('250')
+                        ->loadingIndicatorPosition('left')
+                        ->panelAspectRatio('2:1')
+                        ->panelLayout('integrated')
+                        ->removeUploadedFileButtonPosition('right')
+                        ->uploadButtonPosition('left')
+                        ->uploadProgressIndicatorPosition('left')
+                        ->required(), 
+                    Forms\Components\Textarea::make('image_description')
+                        ->maxLength(20),    
+                        ]),
            
             ]);
     }
@@ -130,6 +143,8 @@ class AddressesRelationManager extends RelationManager
             ->recordTitleAttribute('id')
             ->columns([
                 Tables\Columns\TextColumn::make('address_type'),
+                MapColumn::make('location'),
+                
                 CountryColumn::make('country')->label('Country'),
                 Tables\Columns\TextColumn::make('county.name')->label('County'),
                 Tables\Columns\TextColumn::make('subCounty.name')->label('Sub County'),
@@ -141,18 +156,6 @@ class AddressesRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('floor_no'),
                 Tables\Columns\TextColumn::make('house_no'),
                 Tables\Columns\TextColumn::make('estate'),
-                MapColumn::make('location')
-                        ->extraAttributes([
-                        'class' => 'my-funky-class'
-                        ]) // Optionally set any additional attributes, merged into the wrapper div around the image tag
-                        ->extraImgAttributes(
-                            fn ($record): array => ['title' => $record->latitude . ',' . $record->longitude]
-                        ) // Optionally set any additional attributes you want on the img tag
-                        ->height('150') // API setting for map height in PX
-                        ->width('250') // API setting got map width in PX
-                        ->type('hybrid') // API setting for map type (hybrid, satellite, roadmap, tarrain)
-                        ->zoom(15) // API setting for zoom (1 through 20)
-                        ->ttl(60 * 60 * 24 * 30), // number of seconds to cache image before refetching from API
                 Tables\Columns\TextColumn::make('latitude'),
                 Tables\Columns\TextColumn::make('longitude'),
                 Tables\Columns\ImageColumn::make('image'),

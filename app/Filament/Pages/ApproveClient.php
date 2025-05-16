@@ -8,6 +8,7 @@ use Filament\Forms\Get;
 use Filament\Pages\Page;
 use Filament\Tables\Table;
 use Filament\Facades\Filament;
+use Dotswan\MapPicker\Fields\Map;
 use Illuminate\Support\HtmlString;
 use Filament\Tables\Actions\Action;
 use Filament\Forms\Components\Hidden;
@@ -123,9 +124,11 @@ class ApproveClient extends Page implements HasTable
                         'type_of_tech' => $record->type_of_tech,
                         'loan_officer' => $record->loan_officer->full_name,
                         'signature' => $record->signature,
+                        'signature_upload' => $record->signature_upload,
                         'id_front' => $record->id_front,
                         'id_back' => $record->id_back,
                         'loan_officer_id' => $record->loan_officer->full_name,
+                        'privacy_signature_upload' => $record->privacy_signature_upload,
                         'addresses' => $record->addresses && $record->addresses->count() > 0 ? $record->addresses->map(function($address) {
                             // Load the address with its relationships if they're not already loaded
                             if (!$address->relationLoaded('county') || !$address->relationLoaded('subCounty') || !$address->relationLoaded('ward')) {
@@ -145,6 +148,7 @@ class ApproveClient extends Page implements HasTable
                                 'floor_no' => $address->floor_no,
                                 'house_no' => $address->house_no,
                                 'estate' => $address->estate,
+                                'location' => $address->location,
                                 'latitude' => $address->latitude,
                                 'longitude' => $address->longitude,
                                 'image' => $address->image,
@@ -182,6 +186,7 @@ class ApproveClient extends Page implements HasTable
                             'id_back' => $record->spouse->id_back ?? null,
                             'photo' => $record->spouse->photo ?? null,
                             'consent_signature' => $record->spouse->consent_signature ?? null,
+                            'consent_signature_upload' => $record->spouse->consent_signature_upload ?? null,
                         ] : [],
                         'referees' => $record->referees && $record->referees->count() > 0 ? $record->referees->map(function($ref) {
                             return [
@@ -264,6 +269,9 @@ class ApproveClient extends Page implements HasTable
                                 SignaturePad::make('signature')
                                     ->label('Signature')
                                     ->disabled(),
+                                FileUpload::make('signature_upload')
+                                    ->label('Upload Signature')
+                                    ->disabled(),
                                 FileUpload::make('id_front')
                                     ->label('ID Front')
                                     ->disabled(),
@@ -300,6 +308,8 @@ class ApproveClient extends Page implements HasTable
                                             ->disabled(),
                                         TextInput::make('landmark')
                                             ->label('Landmark')
+                                            ->disabled(),
+                                        Map::make('location')
                                             ->disabled(),
                                         TextInput::make('latitude')
                                             ->label('Latitude')
@@ -383,6 +393,12 @@ class ApproveClient extends Page implements HasTable
                                     ->content(''), 
                                 SignaturePad::make('spouse.consent_signature')
                                     ->label('Spouse Consent Signature')
+                                    ->disabled(),
+                                FileUpload::make('spouse.consent_signature_upload')
+                                    ->label('Spouse Consent Signature Upload')
+                                    ->image()
+                                    ->imageEditor()
+                                    ->imagePreviewHeight('250')
                                     ->disabled(),
                             ])->columns(3),
                         Step::make('Next of Kin')
@@ -586,6 +602,12 @@ class ApproveClient extends Page implements HasTable
                                         DownloadableFormat::JPG,
                                         DownloadableFormat::SVG,
                                     ]), 
+                                FileUpload::make('consent_signature_upload')
+                                    ->label('Consent Signature Upload')
+                                    ->image()
+                                    ->imageEditor()
+                                    ->imagePreviewHeight('250')
+                                    ->disabled(),
                                 ]),
                             
                         Step::make('Admin')

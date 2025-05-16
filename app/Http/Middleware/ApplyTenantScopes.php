@@ -39,12 +39,12 @@ class ApplyTenantScopes
         BankAccount::addGlobalScope(
             fn(Builder $query) => $query-> whereBelongsTo(Filament::getTenant()),
         );
-        ChartOfAccount::addGlobalScope(
-            fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
-        );
-        ChartOfAccountSubtype::addGlobalScope(
-            fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
-        );
+        // ChartOfAccount::addGlobalScope(
+        //     fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
+        // );
+        // ChartOfAccountSubtype::addGlobalScope(
+        //     fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
+        // );
         Transaction::addGlobalScope(
             fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
         );

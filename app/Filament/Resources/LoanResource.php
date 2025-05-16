@@ -30,7 +30,6 @@ use App\Enums\CollateralStatus;
 use App\Events\LoanUndisbursed;
 use App\Jobs\UndisburseLoanJob;
 use App\Models\Loan\LoanCharge;
-use App\Events\LoanLinkedCharge;
 use App\Models\Loan\LoanProduct;
 use App\Models\Loan\LoanPurpose;
 use Filament\Infolists\Infolist;
@@ -45,6 +44,7 @@ use Filament\Tables\Actions\Action;
 use Filament\Tables\Filters\Filter;
 use Illuminate\Support\Facades\Auth;
 use App\Jobs\DisburseApprovedLoanJob;
+use App\Models\Loan\LoanLinkedCharge;
 use App\Models\Loan\LoanTransaction ;
 use Cheesegrits\FilamentPhoneNumbers;
 use Filament\Forms\Components\Hidden;
@@ -313,6 +313,24 @@ class LoanResource extends Resource implements HasShieldPermissions
                             ->searchable()
                             ->preload()
                             ->required(),
+                        Forms\Components\Select::make('loan_charges')
+                                ->label('Loan Charges')
+                                ->options(function (callable $get) {
+                                    $loanProductId = $get('loan_product_id');
+                                    if (!$loanProductId) {
+                                        return [];
+                                    }
+                                    
+                                    $loanProduct = LoanProduct::find($loanProductId);
+                                    if (!$loanProduct) {
+                                        return [];
+                                    }
+                                    
+                                    return $loanProduct->charges->pluck('name', 'id');
+                                })
+                                ->multiple()
+                                ->searchable()
+                                ->preload(),
                         Forms\Components\Hidden::make('loan_transaction_processing_strategy_id'),
 
 
@@ -365,14 +383,14 @@ class LoanResource extends Resource implements HasShieldPermissions
                                 ->searchable()
                                 ->placeholder('Select Client')
                                 ->options(
-                                    LoanGuarantor::where('client_id', $get('client_id'))
+                                    LoanGuarantor::where('client_id', $get('../../client_id'))
                                                 ->get()
                                                 ->pluck('fullname', 'client_id')
                                 )
                                 ->live()
                                 ->reactive()
                                 ->afterStateUpdated(function (Set $set, Get $get)  {
-                                    $guarantorId = $get('client');
+                                    $guarantorId = $get('../../client_id');
                                     
                                     $guarantor = LoanGuarantor::where('client_id', $guarantorId)->latest()->first();
                                     if($guarantor) {
@@ -803,50 +821,7 @@ class LoanResource extends Resource implements HasShieldPermissions
                 Tables\Actions\ViewAction::make(),
             ActionGroup::make([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('approve')
-                    ->label('Approve Loan')
-                    ->icon('heroicon-s-check-circle')
-                    ->modalHeading('Approve Loan')
-                    ->visible(function(Loan $record) {
-                        $policy = new LoanPolicy();
-                        return $record->status->value === 'pending' && $policy->canBeApprovedBy(Auth::user(), $record);
-                    })
-                    ->fillForm(fn (Loan $record): array => [
-                        'approved_amount' => $record->principal,
-                        'approved_by_user_id' => Auth::id(),
-                        'approved_on_date' => Carbon::now(),
-                    ])
-                    ->form([
-                        TextInput::make('approved_amount')
-                            ->label('Approved amount')
-                            ->required(),
-                        DatePicker::make('approved_on_date')
-                            ->native(false),
-                        Textarea::make('approved_notes')
-                            ->label('Approved Notes'),
-                    ])
-                    ->action(function (Loan $record, array $data) {
-                          //check loan limit
-                       if($record->client->suggested_loan_limit >= $data['approved_amount']|| $record->client->suggested_loan_limit ==null  ){
-                        // Disburse logic
-                        $record->approveLoan($data);
-                     //fire disbursement event
-
-                     Notification::make()
-                         ->title('Loan Approved Successfully')
-                         ->success()
-                         ->body('The Loan has been Approved ')
-                         ->send();
-                    } else {
-                     Notification::make()
-                         ->title('Loan Limit Exceeded')
-                         ->danger()
-                         ->body('The Loan Exceed Limit. Choose Lower Amount')
-                         ->send();
-                    }
-                    })
-                    ->color('success')
-                    ->requiresConfirmation(),
+               
 
                 Tables\Actions\Action::make('Reject')
                     ->label('Reject Loan')
@@ -892,64 +867,8 @@ class LoanResource extends Resource implements HasShieldPermissions
                     })
                     ->requiresConfirmation(),
 
-                Tables\Actions\Action::make('unapprove')
-                    ->label('Unapprove')
-                    ->icon('heroicon-s-arrow-uturn-left')
-                    ->color('danger')
-                    ->modalHeading('Unapprove Loan')
-                    ->visible(function(Loan $record) {
-                        $policy = new LoanPolicy();
-                        return $record->status->value === 'approved' && $policy->canBeApprovedBy(Auth::user(), $record);
-                    })
-                    ->action(function (Loan $record) {
-                        $record->unapproveLoan();
-                    })
-                    ->color('danger')
-                    ->requiresConfirmation(),
-                Tables\Actions\Action::make('Disburse')
-                    ->label('Disburse Loan')
-                    ->icon('heroicon-s-arrow-uturn-right')
-                    ->color('success')
-                    ->modalHeading('Disburse Loan')
-                    ->visible(function(Loan $record) {
-                        $policy = new LoanPolicy();
-                        return $record->status->value === 'approved' && $policy->canBeDisbursedBy(Auth::user(), $record);
-                    })
-                    ->fillForm(fn (Loan $record): array => [
-                        'approved_amount' => $record->applied_amount,
-                        'disbursed_by_user_id' => Auth::id(),
-                        'disbursed_on_date' => Carbon::now(),
-                        'first_payment_date' => $record->expected_first_payment_date,
-                    ])
-                    ->form([
-                        Hidden::make('approved_amount')
-                            ->label('Approved amount'),
-                        DatePicker::make('disbursed_on_date')
-                            ->label('Disbursed On Date')
-                            ->native(false),
-                        DatePicker::make('first_payment_date')
-                            ->label('First Payment Date')
-                            ->native(false),
-                        Select::make('payment_type_id')
-                            ->label('Payment Method')
-                            ->options(PaymentType::all()->pluck('name', 'id')),
-                        Textarea::make('disbursed_notes')
-                            ->maxLength(100),
-                    ])
-                    ->action(function (Loan $record, array $data) {
-                        $record->disburseLoan($data,$record);
-                        event(new LoanDisbursed($record));
-                           Notification::make()
-                             ->title('Loan Disbursed Successfully')
-                             ->success()
-                             ->body('The Loan has been disbursed ')
-                             ->send();
-                      
-
-                      })
-                    ->requiresConfirmation(),
-
-
+                
+               
                 Tables\Actions\Action::make('undisburse')
                     ->label('Undisburse')
                     ->icon('heroicon-s-arrow-uturn-left')
@@ -979,7 +898,6 @@ class LoanResource extends Resource implements HasShieldPermissions
                         $policy = new LoanPolicy();
                         return $record->status->value === 'active' && $policy->canBeClosedBy(Auth::user(), $record);
                     })
-                    //->visible(fn(ApprovableModel $record)=> $record->isApprovalCompleted())
                     ->action(function (Loan $record) {
                         $record->closeLoan();
                     })

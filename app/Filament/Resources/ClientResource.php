@@ -34,6 +34,7 @@ use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Awcodes\Curator\Models\Media;
 use Awcodes\TableRepeater\Header;
+use Dotswan\MapPicker\Fields\Map;
 use App\Models\ClientRelationship;
 use Filament\Resources\Pages\Page;
 use Illuminate\Support\Facades\DB;
@@ -44,6 +45,7 @@ use Illuminate\Support\Facades\Auth;
 use Cheesegrits\FilamentPhoneNumbers;
 use Filament\Forms\Components\Wizard;
 use Filament\Support\Enums\FontWeight;
+use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Infolists\Components\Grid;
@@ -71,7 +73,6 @@ use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Illuminate\Database\Eloquent\Collection;
 use Filament\Tables\Actions\ExportBulkAction;
-use Cheesegrits\FilamentGoogleMaps\Fields\Map;
 use App\Filament\Resources\ClientResource\Pages;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 use Filament\Infolists\Components\Actions\Action;
@@ -571,17 +572,35 @@ public static function form(Form $form): Form
                     ->uploadButtonPosition('left')
                     ->uploadProgressIndicatorPosition('left')
                     ->required(),
-                FileUpload::make('signature')
-                    ->label('Signature')
+                FileUpload::make('signature_upload')
+                    ->label('Upload Signature')
                     ->image()
                     ->imageEditor()
+                    ->required()
                     ->loadingIndicatorPosition('left')
                     ->panelAspectRatio('2:1')
                     ->panelLayout('integrated')
                     ->removeUploadedFileButtonPosition('right')
                     ->uploadButtonPosition('left')
-                    ->uploadProgressIndicatorPosition('left')
-                    ->required(),
+                    ->uploadProgressIndicatorPosition('left'),
+                SignaturePad::make('signature')
+                    ->label('Signature')
+                    ->dotSize(2.0)
+                    ->lineMinWidth(0.5)
+                    ->backgroundColor('rgba(0,0,0,0)')  // Background color on light mode
+                    ->backgroundColorOnDark('#f0a')
+                    ->penColor('#0000FF')
+                    ->penColorOnDark('#fff') 
+                    ->lineMaxWidth(2.5)
+                    ->throttle(16)
+                    ->minDistance(5)
+                    ->velocityFilterWeight(0.7) 
+                    ->downloadable()                    // Allow download of the signature (defaults to false)
+                    ->downloadableFormats([             // Available formats for download (defaults to all)
+                        DownloadableFormat::PNG,
+                        DownloadableFormat::JPG,
+                        DownloadableFormat::SVG,
+                    ]),
                    Forms\Components\Textarea::make('notes')
                     ->label('Notes')
                     ->autosize(),
@@ -651,25 +670,29 @@ public static function form(Form $form): Form
                 ->maxLength(20),
             Forms\Components\TextInput::make('estate')
                 ->maxLength(100),
-            
-            Geocomplete::make('location')
-                ->label('Location')
-                ->geolocate()
-                ->updateLatLng()
-                ->isLocation()
-                ->geocodeOnLoad()
-                ->prefix('Choose:')
+            Map::make('location')
+                ->liveLocation(true, true, 10000)  // Updates live location every 10 seconds
+                ->showMarker(true)
+                ->markerColor("#3b82f6")
+                ->markerIconSize([36, 36])
+                ->markerIconAnchor([18, 36])
+                ->clickable(true)
+                ->draggable(true)
+                ->showZoomControl(true)
+                ->showMyLocationButton(true)
+                ->afterStateUpdated(function (Set $set, ?array $state): void {
+                    $set('latitude', $state['lat']);
+                    $set('longitude', $state['lng']);
+                   
+                })
+                ->afterStateHydrated(function ($state, $record, Set $set): void {
+                    $set('location', ['lat' => $record?->latitude, 'lng' => $record?->longitude]);
+                })
                 ->required(),
             Forms\Components\TextInput::make('latitude')
             ->readOnly(),
             Forms\Components\TextInput::make('longitude')
             ->readOnly(),
-            Map::make('location')
-                ->reactive()
-                ->afterStateUpdated(function ($state, callable $get, callable $set) {
-                    $set('latitude', $state['lat']);
-                    $set('longitude', $state['lng']);
-                }),
             FileUpload::make('image')
                 ->label('Image')
                 ->image()
@@ -753,42 +776,44 @@ public static function form(Form $form): Form
             Forms\Components\TextInput::make('occupation')
                 ->label('Spouse Occupation')
                 ->maxLength(100),
-            FileUpload::make('id_front')
-                    ->label('ID Front')
-                    ->image()
-                    ->imageEditor()
-                    ->imagePreviewHeight('250')
-                    ->loadingIndicatorPosition('left')
-                    ->panelAspectRatio('2:1')
-                    ->panelLayout('integrated')
-                    ->removeUploadedFileButtonPosition('right')
-                    ->uploadButtonPosition('left')
-                    ->uploadProgressIndicatorPosition('left')
-                    ->required(),
-            FileUpload::make('id_back')
-                    ->label('ID Back')
-                    ->image()
-                    ->imageEditor()
-                    ->imagePreviewHeight('250')
-                    ->loadingIndicatorPosition('left')
-                    ->panelAspectRatio('2:1')
-                    ->panelLayout('integrated')
-                    ->removeUploadedFileButtonPosition('right')
-                    ->uploadButtonPosition('left')
-                    ->uploadProgressIndicatorPosition('left')
-                    ->required(),
-                Forms\Components\FileUpload::make('photo')
-                ->label('Photo')
-                ->image()
-                ->imageEditor()
-                ->imagePreviewHeight('250')
-                ->loadingIndicatorPosition('left')
-                ->panelAspectRatio('2:1')
-                ->panelLayout('integrated')
-                ->removeUploadedFileButtonPosition('right')
-                ->uploadButtonPosition('left')
-                ->uploadProgressIndicatorPosition('left')
-                ->required(),
+            Fieldset::make('ID Documents')
+                ->schema([
+                    FileUpload::make('id_front')
+                            ->label('ID Front')
+                            ->image()
+                            ->imageEditor()
+                            ->imagePreviewHeight('250')
+                            ->loadingIndicatorPosition('left')
+                            ->panelLayout('integrated')
+                            ->removeUploadedFileButtonPosition('right')
+                            ->uploadButtonPosition('left')
+                            ->uploadProgressIndicatorPosition('left')
+                            ->required(),
+                    FileUpload::make('id_back')
+                            ->label('ID Back')
+                            ->image()
+                            ->imageEditor()
+                            ->imagePreviewHeight('250')
+                            ->loadingIndicatorPosition('left')
+                            ->panelAspectRatio('2:1')
+                            ->panelLayout('integrated')
+                            ->removeUploadedFileButtonPosition('right')
+                            ->uploadButtonPosition('left')
+                            ->uploadProgressIndicatorPosition('left')
+                            ->required(),
+                        Forms\Components\FileUpload::make('photo')
+                        ->label('Photo')
+                        ->image()
+                        ->imageEditor()
+                        ->imagePreviewHeight('250')
+                        ->loadingIndicatorPosition('left')
+                        ->panelAspectRatio('2:1')
+                        ->panelLayout('integrated')
+                        ->removeUploadedFileButtonPosition('right')
+                        ->uploadButtonPosition('left')
+                        ->uploadProgressIndicatorPosition('left')
+                        ->required(),
+                ])->columns(3),
             Forms\Components\Placeholder::make('consent_declaration')
                 ->label('STATUTORY DECLARATION BY SPOUSE/LIVE IN COMPANION')
                 ->columnSpanFull()
@@ -809,26 +834,38 @@ public static function form(Form $form): Form
                 <p style="margin-bottom: 15px; color:#0000FF">DECLARED on ' . Carbon::now()->toFormattedDateString() . '</p>'))
                 ->columnSpanFull()
                 ->content(''), 
-           
-            SignaturePad::make('consent_signature')
-               ->label('Consent Signature')
-                ->dotSize(2.0)
-               ->lineMinWidth(0.5)
-               ->backgroundColor('rgba(0,0,0,0)')  // Background color on light mode
-               ->backgroundColorOnDark('#f0a')
-               ->penColor('#0000FF')
-               ->penColorOnDark('#fff') 
-               ->lineMaxWidth(2.5)
-               ->throttle(16)
-               ->minDistance(5)
-               ->required()
-               ->velocityFilterWeight(0.7) 
-                ->downloadable()                    // Allow download of the signature (defaults to false)
-               ->downloadableFormats([             // Available formats for download (defaults to all)
-                   DownloadableFormat::PNG,
-                   DownloadableFormat::JPG,
-                   DownloadableFormat::SVG,
-               ]),
+            Fieldset::make('Signature')
+            ->schema([
+                    FileUpload::make('consent_signature_upload')
+                            ->label('Upload Consent Signature')
+                            ->image()
+                            ->imageEditor()
+                            ->required()
+                            ->loadingIndicatorPosition('left')
+                            ->panelAspectRatio('2:1')
+                            ->panelLayout('integrated')
+                            ->removeUploadedFileButtonPosition('right')
+                            ->uploadButtonPosition('left')
+                            ->uploadProgressIndicatorPosition('left'),
+                    SignaturePad::make('consent_signature')
+                    ->label('Consent Signature')
+                        ->dotSize(2.0)
+                    ->lineMinWidth(0.5)
+                    ->backgroundColor('rgba(0,0,0,0)')  // Background color on light mode
+                    ->backgroundColorOnDark('#f0a')
+                    ->penColor('#0000FF')
+                    ->penColorOnDark('#fff') 
+                    ->lineMaxWidth(2.5)
+                    ->throttle(16)
+                    ->minDistance(5)
+                    ->velocityFilterWeight(0.7) 
+                        ->downloadable()                    // Allow download of the signature (defaults to false)
+                    ->downloadableFormats([             // Available formats for download (defaults to all)
+                        DownloadableFormat::PNG,
+                        DownloadableFormat::JPG,
+                        DownloadableFormat::SVG,
+                    ]),
+                ])->columns(3),
             ])
             ->columns(3),
         ];
@@ -1014,25 +1051,38 @@ public static function form(Form $form): Form
                 ->content(''), 
             ])
             ->columnSpan('full'),
-            SignaturePad::make('privacy_signature')
-               ->label('Privacy Signature')
-                ->dotSize(2.0)
-               ->lineMinWidth(0.5)
-               ->backgroundColor('rgba(0,0,0,0)')  // Background color on light mode
-               ->backgroundColorOnDark('#f0a')
-               ->penColor('#0000FF')
-               ->penColorOnDark('#fff') 
-               ->lineMaxWidth(2.5)
-               ->throttle(16)
-               ->minDistance(5)
-               ->required()
-               ->velocityFilterWeight(0.7) 
-                ->downloadable()                    // Allow download of the signature (defaults to false)
-               ->downloadableFormats([             // Available formats for download (defaults to all)
-                   DownloadableFormat::PNG,
-                   DownloadableFormat::JPG,
-                   DownloadableFormat::SVG,
-               ]),
+            Card::make()
+                  ->columns(2)
+                    ->schema([
+                        FileUpload::make('privacy_signature_upload')
+                            ->label('Upload Signature')
+                            ->image()
+                            ->imageEditor()
+                            ->loadingIndicatorPosition('left')
+                            ->removeUploadedFileButtonPosition('right')
+                            ->uploadButtonPosition('left')
+                            ->uploadProgressIndicatorPosition('left')
+                            ->required(),
+                    SignaturePad::make('privacy_signature')
+                    ->label('Privacy Signature')
+                        ->dotSize(2.0)
+                    ->lineMinWidth(0.5)
+                    ->backgroundColor('rgba(0,0,0,0)')  // Background color on light mode
+                    ->backgroundColorOnDark('#f0a')
+                    ->penColor('#0000FF')
+                    ->penColorOnDark('#fff') 
+                    ->lineMaxWidth(2.5)
+                    ->throttle(16)
+                    ->minDistance(5)
+                    ->velocityFilterWeight(0.7) 
+                        ->downloadable()                    // Allow download of the signature (defaults to false)
+                    ->downloadableFormats([             // Available formats for download (defaults to all)
+                        DownloadableFormat::PNG,
+                        DownloadableFormat::JPG,
+                        DownloadableFormat::SVG,
+                    ]),
+                ]),
+            
         ];
     }
 
