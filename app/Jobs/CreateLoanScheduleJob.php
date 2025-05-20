@@ -40,14 +40,17 @@ class CreateLoanScheduleJob implements ShouldQueue
         try {
             $client_account = ClientAccount::where('client_id', $loan->client_id)->first();
             $interest_rate = $this->determine_period_interest_rate($loan->interest_rate, $loan->repayment_frequency_type, $loan->interest_rate_type, $loan->repayment_frequency);
+            $minimum_interest_rate = ($loan->loan_product->minimum_interest_rate/100);
             $balance = round($loan->approved_amount, $loan->decimals);
             $interest_balance = round(($interest_rate) * $loan->approved_amount, $loan->decimals);
+            $minimum_interest_balance = round(($minimum_interest_rate) * $loan->approved_amount, $loan->decimals);
             $period = ($loan->loan_term / $loan->repayment_frequency);
             $payment_from_date = $loan->disbursed_on_date;
             $next_payment_date = $loan->first_payment_date;
             $total_principal = 0;
             $total_interest = 0;
             $total_outstanding = 0;
+            $payoff = 0;
 
 
        
@@ -135,11 +138,15 @@ class CreateLoanScheduleJob implements ShouldQueue
                     if ($i == 1) {
                         // For first installment, total_due is the full principal + interest
                         $loan_repayment_schedule->total_due = $loan->approved_amount + $loan->interest_disbursed_derived;
+                        $loan_repayment_schedule->payoff = round($loan->approved_amount + ($loan->approved_amount* $minimum_interest_rate), $loan->decimals);
                         $total_outstanding = $loan->approved_amount + $loan->interest_disbursed_derived- ($loan_repayment_schedule->principal + $loan_repayment_schedule->interest);
+                        $payoff = round($loan->approved_amount + ($loan->approved_amount* $minimum_interest_rate), $loan->decimals);
                     } else {
                         // For subsequent installments, use previous total_outstanding
                         $loan_repayment_schedule->total_due = $total_outstanding;
+                        $loan_repayment_schedule->payoff = $payoff;
                         $total_outstanding = $total_outstanding - ($loan_repayment_schedule->principal + $loan_repayment_schedule->interest);
+                        $payoff = round($payoff - ($loan_repayment_schedule->principal + $loan_repayment_schedule->interest), $loan->decimals);
                     }
                     $loan_repayment_schedule->save();
         }

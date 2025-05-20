@@ -68,6 +68,9 @@ class RepaymentSchedulesRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('total_due')
                       ->label('Total Balance')
                       ->money(Currency::where('is_default', 1)->first()->symbol),
+                Tables\Columns\TextColumn::make('payoff')
+                      ->label('Payoff')
+                      ->money(Currency::where('is_default', 1)->first()->symbol),
                 Tables\Columns\TextColumn::make('due_date'),
                 Tables\Columns\TextColumn::make('paid_by_date')
                        ->getStateUsing(fn (LoanRepaymentSchedule $record) => $record->getPaidByDate())

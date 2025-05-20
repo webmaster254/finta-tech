@@ -377,51 +377,52 @@ public static function form(Form $form): Form
                             }),
                         Infolists\Components\ImageEntry::make('signature')
                             ->label('Signature'),
+                        Infolists\Components\ImageEntry::make('id_front'),
+                        Infolists\Components\ImageEntry::make('id_back'),
                     ])->columns(3),
                 ]),
                 Split::make([
 
                     Section::make('More Information')
-
-                    ->headerActions([
-                          Action::make('Initiate Payment')
-                                ->modalHeading('Initiate Mpesa STK Payment')
-                                ->modalDescription('This will initiate a payment request to the client.')
-                                ->modalIcon('heroicon-o-credit-card')
-                                ->visible(function (Client $record) {
-                                    return $record->status === 'active';
+                              ->columnSpanFull()
+                            ->headerActions([
+                                Action::make('Initiate Payment')
+                                        ->modalHeading('Initiate Mpesa STK Payment')
+                                        ->modalDescription('This will initiate a payment request to the client.')
+                                        ->modalIcon('heroicon-o-credit-card')
+                                        ->visible(function (Client $record) {
+                                            return $record->status === 'active';
+                                        })
+                                ->form([
+                                    Forms\Components\TextInput::make('amount')
+                                        ->required()
+                                        ->numeric(),
+                                ])
+                            ->action(function (Client $record, array $data) {
+                                    
+                                    $mpesaController = app(\App\Http\Controllers\MpesaController::class);
+                                    $mpesaController->initiateStkRequest(new \Illuminate\Http\Request([
+                                        'amount' => $data['amount'],
+                                        'msisdn' => $record->mobile
+                                    ]));
+                                    
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('Payment request sent')
+                                        ->body('An STK push has been sent to the client\'s phone')
+                                        ->success()
+                                        ->send();
                                 })
-                        ->form([
-                            Forms\Components\TextInput::make('amount')
-                                ->required()
-                                ->numeric(),
-                        ])
-                       ->action(function (Client $record, array $data) {
-                            
-                            $mpesaController = app(\App\Http\Controllers\MpesaController::class);
-                            $mpesaController->initiateStkRequest(new \Illuminate\Http\Request([
-                                'amount' => $data['amount'],
-                                'msisdn' => $record->mobile
-                            ]));
-                            
-                            \Filament\Notifications\Notification::make()
-                                ->title('Payment request sent')
-                                ->body('An STK push has been sent to the client\'s phone')
-                                ->success()
-                                ->send();
-                        })
 
-                        
+                                
 
-                    
-                    ])
+                            
+                            ])
 
                     ->schema([
                         Infolists\Components\TextEntry::make('status')
                             //->color('info')
                             ->badge(),
-                       Infolists\Components\ImageEntry::make('id_front'),
-                        Infolists\Components\ImageEntry::make('id_back'),
+                        
                         Infolists\Components\TextEntry::make('email')
                             ->color('info')
                             ->columnSpan(2),
@@ -453,9 +454,33 @@ public static function form(Form $form): Form
                         Infolists\Components\TextEntry::make('created_at')
                             ->color('info')
                             ->label('Joined Date'),
-                    ])->columns(3),
 
-                ]),
+                           
+                    ])->columns(3)
+                    ->grow(true),
+                
+                Section::make('Loans')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('loans')
+                            ->color('success')
+                            ->badge()
+                            ->money('KES')
+                            ->label('Total balance')
+                            ->getStateUsing(function($record) {
+                                return $record->totalLoanBalance();
+                            }),
+                        Infolists\Components\TextEntry::make('due_today')
+                            ->color('danger')
+                            ->badge()
+                            ->label('Due Today')
+                            ->money('KES')
+                            ->getStateUsing(function($record) {
+                                return $record->dueToday();
+                            }),
+                    ])->columns(2),
+
+                ])->from('2xl'),
+                
 
            
 

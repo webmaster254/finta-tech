@@ -33,6 +33,7 @@ class LoanRepaymentSchedule extends Model
         'penalties_written_off_derived',
         'penalties_waived_derived', 
         'total_due',
+        'payoff',
         'month',
         'year',
     ];

@@ -344,6 +344,57 @@ public function next_of_kins(): HasMany
             'closed_on_date' => now(),
         ]);
     }
+
+    public function totalLoanBalance()
+    {
+        // Get the total balance from loan repayment schedule of active loans
+        $totalBalance = 0;
+        
+        // Get all active loans for this client
+        $activeLoans = $this->loans()->where('status', 'active')->get();
+        
+        foreach ($activeLoans as $loan) {
+            // Get the repayment schedules for this loan
+            $repaymentSchedules = $loan->repayment_schedules;
+            
+            if ($repaymentSchedules->count() > 0) {
+                // Sum up all principal and interest
+                $totalPrincipal = $repaymentSchedules->sum('principal');
+                $totalInterest = $repaymentSchedules->sum('interest');
+                $totalPrincipalRepaid = $repaymentSchedules->sum('principal_repaid_derived');
+                $totalInterestRepaid = $repaymentSchedules->sum('interest_repaid_derived');
+                
+                // Calculate the balance
+                $loanBalance = ($totalPrincipal + $totalInterest) - ($totalPrincipalRepaid + $totalInterestRepaid);
+                $totalBalance += $loanBalance;
+            }
+        }
+        
+        return $totalBalance;
+    }
+
+    public function dueToday()
+    {
+        $totalDue = 0;
+        
+        // Get all active loans for this client
+        $activeLoans = $this->loans()->where('status', 'active')->get();
+        
+        foreach ($activeLoans as $loan) {
+            // Get the first repayment schedule with payoff > 0
+            $dueSchedule = $loan->repayment_schedules()
+                ->where('payoff', '>', 0)
+                ->orderBy('installment', 'asc')
+                ->first();
+                
+            if ($dueSchedule) {
+                $totalDue += $dueSchedule->payoff;
+            }
+        }
+        
+        return $totalDue;
+    }
+    
     public function changeLoanOfficer($loanOfficer)
     {
         $this->update(['loan_officer_id' => $loanOfficer]);
