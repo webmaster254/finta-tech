@@ -2,6 +2,7 @@
 
 namespace App\Models\Loan;
 
+use App\Models\Client;
 use App\Models\Loan\LoanCharge;
 use App\Models\Loan\LoanTransaction;
 use Illuminate\Database\Eloquent\Model;
@@ -16,7 +17,7 @@ class LoanLinkedCharge extends Model
         'loan_transaction_id',
         'name',
         'amount',
-        'account_number',
+        'client_id',
         'calculated_amount',
         'amount_paid_derived',
         'amount_waived_derived',
@@ -37,6 +38,10 @@ class LoanLinkedCharge extends Model
     public function loans()
     {
         return $this->hasOne(Loan::class, 'id', 'loan_id');
+    }
+    public function client()
+    {
+        return $this->hasOne(Client::class, 'id', 'client_id');
     }
 
     public function transaction()

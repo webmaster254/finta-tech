@@ -25,13 +25,13 @@ return new class extends Migration
             $table->foreignIdFor(LoanTransaction::class)->constrained()->onUpdate('cascade')->onDelete('cascade');
 
             $table->text('name')->nullable();
-            $table->decimal('amount', 65, 6);
-            $table->decimal('calculated_amount', 65, 6)->nullable();
-            $table->bigInteger('account_number');
-            $table->decimal('amount_paid_derived', 65, 6)->nullable();
-            $table->decimal('amount_waived_derived', 65, 6)->nullable();
-            $table->decimal('amount_written_off_derived', 65, 6)->nullable();
-            $table->decimal('amount_outstanding_derived', 65, 6)->nullable();
+            $table->decimal('amount', 65, 2);
+            $table->decimal('calculated_amount', 65, 2)->nullable();
+            $table->bigInteger('client_id');
+            $table->decimal('amount_paid_derived', 65, 2)->nullable();
+            $table->decimal('amount_waived_derived', 65, 2)->nullable();
+            $table->decimal('amount_written_off_derived', 65, 2)->nullable();
+            $table->decimal('amount_outstanding_derived', 65, 2)->nullable();
             $table->tinyInteger('is_penalty')->default(0);
             $table->tinyInteger('waived')->default(0);
             $table->tinyInteger('is_paid')->default(0);

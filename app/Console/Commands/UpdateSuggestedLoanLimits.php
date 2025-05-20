@@ -34,7 +34,7 @@ class UpdateSuggestedLoanLimits extends Command
             $client->save();
             $score = $this->calculatePaymentHabitScore($client);
            $latestLoan = $client->loans()->where('status','closed')->latest()->first();
-            $approvedAmount = $latestLoan ? $latestLoan->approved_amount : 10000;
+            $approvedAmount = $latestLoan ? $latestLoan->approved_amount : 0;
             $this->info("Updated limit for client {$client->id}: {$suggestedLimit}");
             //$this->info("latest approved loan {$approvedAmount}");
             $this->info("score{$score}");

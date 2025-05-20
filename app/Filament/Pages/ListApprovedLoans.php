@@ -8,6 +8,7 @@ use App\Models\Loan\Loan;
 use Filament\Tables\Table;
 use App\Events\LoanDisbursed;
 use App\Models\ChartOfAccount;
+use App\Jobs\CreateLoanScheduleJob;
 use Filament\Tables\Actions\Action;
 use Filament\Support\Enums\MaxWidth;
 use Illuminate\Support\Facades\Auth;
@@ -112,7 +113,7 @@ class ListApprovedLoans extends Page implements HasTable
                                 'first_payment_date' => $formdata['first_repayment_date'],
                         ]);
                         $record->save();
-                        event(new LoanDisbursed($record,$formdata));
+                        CreateLoanScheduleJob::dispatch($record);
                         SendLoanDisbursedNotificationJob::dispatch($record);
                            Notification::make()
                              ->title('Loan Disbursed Successfully')

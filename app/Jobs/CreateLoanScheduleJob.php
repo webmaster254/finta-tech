@@ -2,11 +2,25 @@
 
 namespace App\Jobs;
 
+use App\Models\PaymentType;
+use App\Models\Transaction;
+use App\Models\JournalEntry;
+use App\Events\LoanDisbursed;
+use App\Models\ClientAccount;
 use Illuminate\Bus\Queueable;
+use App\Models\JournalEntries;
+use Illuminate\Support\Carbon;
+use App\Models\Loan\LoanCharge;
+use App\Models\Loan\LoanTransaction;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Loan\LoanLinkedCharge;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Queue\InteractsWithQueue;
+use App\Models\Loan\LoanRepaymentSchedule;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CreateLoanScheduleJob implements ShouldQueue
 {
@@ -21,16 +35,18 @@ class CreateLoanScheduleJob implements ShouldQueue
     public function handle()
     {
         $loan = $this->loan;
-       
-        $client_account = ClientAccount::where('client_id', $loan->client_id)->first();
-        $interest_rate = $this->determine_period_interest_rate($loan->interest_rate, $loan->repayment_frequency_type, $loan->interest_rate_type, $loan->repayment_frequency);
-        $balance = round($loan->approved_amount, $loan->decimals);
-        $interest_balance = round(($interest_rate) * $loan->approved_amount, $loan->decimals);
-        $period = ($loan->loan_term / $loan->repayment_frequency);
-        $payment_from_date = $loan->disbursed_on_date;
-        $next_payment_date = $loan->first_payment_date;
-        $total_principal = 0;
-        $total_interest = 0;
+        
+        DB::beginTransaction();
+        try {
+            $client_account = ClientAccount::where('client_id', $loan->client_id)->first();
+            $interest_rate = $this->determine_period_interest_rate($loan->interest_rate, $loan->repayment_frequency_type, $loan->interest_rate_type, $loan->repayment_frequency);
+            $balance = round($loan->approved_amount, $loan->decimals);
+            $interest_balance = round(($interest_rate) * $loan->approved_amount, $loan->decimals);
+            $period = ($loan->loan_term / $loan->repayment_frequency);
+            $payment_from_date = $loan->disbursed_on_date;
+            $next_payment_date = $loan->first_payment_date;
+            $total_principal = 0;
+            $total_interest = 0;
 
        
         
@@ -164,6 +180,7 @@ class CreateLoanScheduleJob implements ShouldQueue
                 $loan_transaction->save();
                 $installment_fees = 0;
                 $disbursement_fees = 0;
+                $calculated_amount = 0;
   
 
                 //charges
@@ -171,91 +188,61 @@ class CreateLoanScheduleJob implements ShouldQueue
                     //disbursement
                     if ($key->loan_charge_type_id == 1) {
                         if ($key->loan_charge_option_id == 1) {
-                            $key->calculated_amount = $key->amount;
-                            $key->amount_paid_derived = $key->calculated_amount;
-                            $key->is_paid = 1;
+                            $calculated_amount = $key->amount;
                             $disbursement_fees = $disbursement_fees + $key->calculated_amount;
                         }
                         if ($key->loan_charge_option_id == 2) {
-                            $key->calculated_amount = round(($key->amount * $total_principal / 100), $loan->decimals);
-                            $key->amount_paid_derived = $key->calculated_amount;
-                            $key->is_paid = 1;
-                            $disbursement_fees = $disbursement_fees + $key->calculated_amount;
+                            $calculated_amount = round(($key->amount * $total_principal / 100), $loan->decimals);
+                            $disbursement_fees = $disbursement_fees + $calculated_amount;
                         }
                         if ($key->loan_charge_option_id == 3) {
-                            $key->calculated_amount = round(($key->amount * ($total_interest + $total_principal) / 100), $loan->decimals);
-                            $key->amount_paid_derived = $key->calculated_amount;
-                            $key->is_paid = 1;
-                            $disbursement_fees = $disbursement_fees + $key->calculated_amount;
+                            $calculated_amount = round(($key->amount * ($total_interest + $total_principal) / 100), $loan->decimals);
+                            $disbursement_fees = $disbursement_fees + $calculated_amount;
                         }
                         if ($key->loan_charge_option_id == 4) {
-                            $key->calculated_amount = round(($key->amount * $total_interest / 100), $loan->decimals);
-                            $key->amount_paid_derived = $key->calculated_amount;
-                            $key->is_paid = 1;
-                            $disbursement_fees = $disbursement_fees + $key->calculated_amount;
+                            $calculated_amount = round(($key->amount * $total_interest / 100), $loan->decimals);
+                            $disbursement_fees = $disbursement_fees + $calculated_amount;
                         }
                         if ($key->loan_charge_option_id == 5) {
-                            $key->calculated_amount = round(($key->amount * $total_principal / 100), $loan->decimals);
-                            $key->amount_paid_derived = $key->calculated_amount;
-                            $key->is_paid = 1;
-                            $disbursement_fees = $disbursement_fees + $key->calculated_amount;
+                            $calculated_amount = round(($key->amount * $total_principal / 100), $loan->decimals);
+                            $disbursement_fees = $disbursement_fees + $calculated_amount;
                         }
                         if ($key->loan_charge_option_id == 6) {
-                            $key->calculated_amount = round(($key->amount * $total_principal / 100), $loan->decimals);
-                            $key->amount_paid_derived = $key->calculated_amount;
-                            $key->is_paid = 1;
-                            $disbursement_fees = $disbursement_fees + $key->calculated_amount;
+                            $calculated_amount = round(($key->amount * $total_principal / 100), $loan->decimals);
+                            $disbursement_fees = $disbursement_fees + $calculated_amount;
                         }
                         if ($key->loan_charge_option_id == 7) {
-                            $key->calculated_amount = round(($key->amount * $loan->principal / 100), $loan->decimals);
-                            $key->amount_paid_derived = $key->calculated_amount;
-                            $key->is_paid = 1;
-                            $disbursement_fees = $disbursement_fees + $key->calculated_amount;
+                            $calculated_amount = round(($key->amount * $loan->principal / 100), $loan->decimals);
+                            $disbursement_fees = $disbursement_fees + $calculated_amount;
                         }
                         if ($key->loan_charge_option_id == 8) {
-                            $key->calculated_amount = round(($key->amount * $loan->principal / 100), $loan->decimals);
-                            $key->amount_paid_derived = $key->calculated_amount;
-                            $key->is_paid = 1;
-                            $disbursement_fees = $disbursement_fees + $key->calculated_amount;
+                            $calculated_amount = round(($key->amount * $loan->principal / 100), $loan->decimals);
+                            $disbursement_fees = $disbursement_fees + $calculated_amount;
                         }
 
                         if ($disbursement_fees > 0) {
 
 
-                            // create disbursement fee transaction and get transaction id
-                            $loan_transaction = new LoanTransaction();
-                            $loan_transaction->created_by_id = Auth::id();
-                            $loan_transaction->loan_id = $loan->id;
-                            $loan_transaction->branch_id = $loan->branch_id;
-                            $loan_transaction->name = $key->name;
-                            $loan_transaction->loan_transaction_type_id = 5;
-                            $loan_transaction->submitted_on = $loan->disbursed_on_date;
-                            $loan_transaction->created_on = date("Y-m-d");
-                            $loan_transaction->amount = $disbursement_fees;
-                            $loan_transaction->debit = $disbursement_fees;
-                            $loan_transaction->credit = 0;
-                            $loan_transaction->save();
-                            $disbursement_fees_transaction_id = $loan_transaction->id;
+                            //create charges for loan disbursement
+                            $loan_linked_charge = new LoanLinkedCharge();
+                            $loan_linked_charge->loan_id = $loan->id;
+                            $loan_linked_charge->client_id = $loan->client->id;
+                            $loan_linked_charge->name = $key->name;
+                            $loan_linked_charge->loan_charge_id = $key->id;
+                            $loan_linked_charge->amount = $key->amount;
+                            $loan_linked_charge->calculated_amount = $calculated_amount;
+                            $loan_linked_charge->loan_charge_type_id = $key->loan_charge_type_id;
+                            $loan_linked_charge->loan_charge_option_id = $key->loan_charge_option_id;
+                            $loan_linked_charge->loan_transaction_id = $disbursal_transaction_id;
+                            $loan_linked_charge->is_penalty = $key->is_penalty;
+                            $loan_linked_charge->is_paid = 0;
+                            $loan_linked_charge->save();
+                            $disbursement_fees_transaction_id = $loan_linked_charge->id;
                        
 
-                             //check if fee is insurance and create journal and transaction entry
-                             if ($key->loan_charge_type_id == 8) {
-                                $journal_entry = new JournalEntries();
-                                $journal_entry->transaction_id = $disbursement_fees_transaction_id;
-                                $journal_entry->type = 'debit';
-                                $journal_entry->branch_id = $loan->branch_id;
-                                $journal_entry->amount = $disbursement_fees;
-                                $journal_entry->description = 'Insurance Fee';
-                                $journal_entry->chart_of_account_id = $loan->loan_product->insurance_chart_of_account_id;
-                                $journal_entry->save();
-                            }   
-
-
-                        
- 
                             //create journal for disbursement fee
                             $journal_entry = new JournalEntries();
-                            $journal_entry->transaction_id = $disbursement_fees_transaction_id;
+                            $journal_entry->transaction_id = $disbursal_transaction_id;
                             $journal_entry->type = 'debit';
                             $journal_entry->branch_id = $loan->branch_id;
                             $journal_entry->amount = $disbursement_fees;
@@ -268,56 +255,15 @@ class CreateLoanScheduleJob implements ShouldQueue
                             if ($client_account->balance >= $disbursement_fees) {
                                 $client_account->withdraw($disbursement_fees,'fee',$key->name);
                             
-                            
-
-                            if($key->loan_charge_type_id == 8){
-                                //transaction
-                                $loan_transaction = new LoanTransaction();
-                                $loan_transaction->created_by_id = Auth::id();
-                                $loan_transaction->loan_id = $loan->id;
-                                $loan_transaction->branch_id = $loan->branch_id;
-                                $loan_transaction->name = $key->name;
-                                $loan_transaction->loan_transaction_type_id = 2;
-                                $loan_transaction->submitted_on = $loan->disbursed_on_date;
-                                $loan_transaction->created_on = date("Y-m-d");
-                                $loan_transaction->amount = $disbursement_fees;
-                                $loan_transaction->credit = $disbursement_fees;
-                                $loan_transaction->debit = 0;
-                                $loan_transaction->reference = $client_account->account_number;
-                                $loan_transaction->save();
-                                $disbursement_fees_transaction_id = $loan_transaction->id;
-
-                                //journal entry
-                                $journal_entry = new JournalEntries();
-                                $journal_entry->transaction_id = $disbursement_fees_transaction_id;
-                                $journal_entry->type = 'credit';
-                                $journal_entry->branch_id = $loan->branch_id;
-                                $journal_entry->amount = $disbursement_fees;
-                                $journal_entry->description = $key->name.'For Loan '.$loan->loan_account_number;
-                                $journal_entry->chart_of_account_id = $loan->loan_product->insurance_chart_of_account_id;
-                                $journal_entry->save();
-                            }
-
-                            //record transactions
-                            $loan_transaction = new LoanTransaction();
-                            $loan_transaction->created_by_id = Auth::id();
-                            $loan_transaction->loan_id = $loan->id;
-                            $loan_transaction->branch_id = $loan->branch_id;
-                            $loan_transaction->name = $key->name;
-                            $loan_transaction->loan_transaction_type_id = 5;
-                            $loan_transaction->submitted_on = $loan->disbursed_on_date;
-                            $loan_transaction->created_on = date("Y-m-d");
-                            $loan_transaction->amount = $disbursement_fees;
-                            $loan_transaction->credit = $disbursement_fees;
-                            $loan_transaction->debit = 0;
-                            $loan_transaction->reference = $client_account->account_number;
-                            $loan_transaction->description = $key->name.'For Loan '.$loan->loan_account_number;
-                            $loan_transaction->save();
-                            $disbursement_fees_transaction_id = $loan_transaction->id;
-
+                                //update amount paid derived in the lona linked charge table
+                                $loan_linked_charge = LoanLinkedCharge::find($disbursement_fees_transaction_id);
+                                $loan_linked_charge->amount_paid_derived = $disbursement_fees;
+                                $loan_linked_charge->is_paid = 1;
+                                $loan_linked_charge->save();
+                           
                             //journal entry
                             $journal_entry = new JournalEntries();
-                            $journal_entry->transaction_id = $disbursement_fees_transaction_id;
+                            $journal_entry->transaction_id = $disbursal_transaction_id;
                             $journal_entry->type = 'credit';
                             $journal_entry->branch_id = $loan->branch_id;
                             $journal_entry->amount = $disbursement_fees;
@@ -326,38 +272,42 @@ class CreateLoanScheduleJob implements ShouldQueue
                             $journal_entry->save();
                         }
                     }
-                        $loan->disbursement_charges += $disbursement_fees;
-                        $loan->save();
+                        //$loan->disbursement_charges += $disbursement_fees;
+                       //$loan->save();
                     }
 
                      //installment_fee
                     if ($key->loan_charge_type_id == 3) {
                         if ($key->loan_charge_option_id == 1) {
-                            $key->calculated_amount = $key->amount;
+                            $loan->charges->calculated_amount = $key->amount;
                             $installment_fees = $installment_fees + $key->calculated_amount;
                         }
                         if ($key->loan_charge_option_id == 2) {
-                            $key->calculated_amount = round(($key->amount * $total_principal / 100), $loan->decimals);
+                            $loan->charges->calculated_amount = round(($key->amount * $total_principal / 100), $loan->decimals);
                             $installment_fees = $installment_fees + $key->calculated_amount;
                         }
                         if ($key->loan_charge_option_id == 3) {
-                            $key->calculated_amount = round(($key->amount * ($total_interest + $total_principal) / 100), $loan->decimals);
+                            $loan->charges->calculated_amount = round(($key->amount * ($total_interest + $total_principal) / 100), $loan->decimals);
                             $installment_fees = $installment_fees + $key->calculated_amount;
                         }
                         if ($key->loan_charge_option_id == 4) {
-                            $key->calculated_amount = round(($key->amount * $total_interest / 100), $loan->decimals);
+                            $loan->charges->calculated_amount = round(($key->amount * $total_interest / 100), $loan->decimals);
                             $installment_fees = $installment_fees + $key->calculated_amount;
                         }
                         if ($key->loan_charge_option_id == 5) {
-                            $key->calculated_amount = round(($key->amount * $total_principal / 100), $loan->decimals);
+                            $loan->charges->calculated_amount = round(($key->amount * $total_principal / 100), $loan->decimals);
                             $installment_fees = $installment_fees + $key->calculated_amount;
                         }
                         if ($key->loan_charge_option_id == 6) {
-                            $key->calculated_amount = round(($key->amount * $total_principal / 100), $loan->decimals);
+                            $loan->charges->calculated_amount = round(($key->amount * $total_principal / 100), $loan->decimals);
                             $installment_fees = $installment_fees + $key->calculated_amount;
                         }
                         if ($key->loan_charge_option_id == 7) {
-                            $key->calculated_amount = round(($key->amount * $loan->principal / 100), $loan->decimals);
+                            $loan->charges->calculated_amount = round(($key->amount * $loan->principal / 100), $loan->decimals);
+                            $installment_fees = $installment_fees + $key->calculated_amount;
+                        }
+                        if ($key->loan_charge_option_id == 8) {
+                            $loan->charges->calculated_amount = round(($key->amount * $loan->principal / 100), $loan->decimals);
                             $installment_fees = $installment_fees + $key->calculated_amount;
                         }
                     //create transaction
@@ -495,12 +445,20 @@ class CreateLoanScheduleJob implements ShouldQueue
                                 ]);
 
                             } catch (\Exception $e) {
-                                // Log error but continue with loan disbursement
-                                \Log::error('Failed to process automatic repayment: ' . $e->getMessage());
+                                // Log error and throw exception to trigger rollback
+                                Log::error('Failed to process automatic repayment: ' . $e->getMessage());
+                                throw $e;
                             }
                         }
 
                     }
+                    DB::commit();
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    throw $e;
+                }
+            
+         
     }
 
      /**

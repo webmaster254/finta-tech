@@ -100,6 +100,7 @@ use App\Filament\Resources\ClientResource\RelationManagers\SmsRelationManager;
 use App\Filament\Resources\UserResource\RelationManagers\UsersRelationManager;
 use App\Filament\Resources\ClientResource\RelationManagers\FilesRelationManager;
 use App\Filament\Resources\ClientResource\RelationManagers\LoansRelationManager;
+use App\Filament\Resources\ClientResource\RelationManagers\ChargesRelationManager;
 use App\Filament\Resources\ClientResource\RelationManagers\SpousesRelationManager;
 use App\Filament\Resources\ClientResource\RelationManagers\RefereesRelationManager;
 use App\Filament\Resources\ClientResource\RelationManagers\AddressesRelationManager;
@@ -1338,6 +1339,7 @@ public static function form(Form $form): Form
             RefereesRelationManager::class,
             NextOfKinsRelationManager::class,
             FilesRelationManager::class,
+            ChargesRelationManager::class,
         ];
     }
 
@@ -1349,7 +1351,7 @@ public static function form(Form $form): Form
             'create' => Pages\CreateClient::route('/create'),
             'edit' => Pages\EditClient::route('/{record}/edit'),
             'view' => Pages\ViewClient::route('/{record}'),
-             'manage_employment_info' => Pages\ManageEmploymentInfo::route('/{record}/manage-employment-info'),
+            // 'manage_employment_info' => Pages\ManageEmploymentInfo::route('/{record}/manage-employment-info'),
         ];
     }
     

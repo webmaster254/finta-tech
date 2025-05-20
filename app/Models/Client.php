@@ -21,6 +21,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Loan\LoanLinkedCharge;
 use Filament\Models\Contracts\HasName;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Models\Contracts\HasAvatar;
@@ -254,6 +255,10 @@ public function spouse()
     }
 
 
+    public function charges()
+    {
+        return $this->hasMany(LoanLinkedCharge::class);
+    }
     public function title()
     {
         return $this->belongsTo(Title::class);
