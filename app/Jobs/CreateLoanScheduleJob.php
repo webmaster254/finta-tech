@@ -47,6 +47,8 @@ class CreateLoanScheduleJob implements ShouldQueue
             $next_payment_date = $loan->first_payment_date;
             $total_principal = 0;
             $total_interest = 0;
+            $total_outstanding = 0;
+
 
        
         
@@ -129,8 +131,17 @@ class CreateLoanScheduleJob implements ShouldQueue
             }
             $total_principal = $total_principal + $loan_repayment_schedule->principal;
             $total_interest = $total_interest + $loan_repayment_schedule->interest;
-            $loan_repayment_schedule->total_due = $loan_repayment_schedule->principal + $loan_repayment_schedule->interest;
-            $loan_repayment_schedule->save();
+                     // Calculate total_due based on installment number
+                    if ($i == 1) {
+                        // For first installment, total_due is the full principal + interest
+                        $loan_repayment_schedule->total_due = $loan->approved_amount + $loan->interest_disbursed_derived;
+                        $total_outstanding = $loan->approved_amount + $loan->interest_disbursed_derived- ($loan_repayment_schedule->principal + $loan_repayment_schedule->interest);
+                    } else {
+                        // For subsequent installments, use previous total_outstanding
+                        $loan_repayment_schedule->total_due = $total_outstanding;
+                        $total_outstanding = $total_outstanding - ($loan_repayment_schedule->principal + $loan_repayment_schedule->interest);
+                    }
+                    $loan_repayment_schedule->save();
         }
 
                 $loan->expected_maturity_date = $next_payment_date;
@@ -336,7 +347,7 @@ class CreateLoanScheduleJob implements ShouldQueue
                         } else {
                             $loan_repayment_schedule->fees = $loan_repayment_schedule->fees + $key->calculated_amount;
                         }
-                        $loan_repayment_schedule->total_due = $loan_repayment_schedule->principal + $loan_repayment_schedule->interest + $loan_repayment_schedule->fees;
+                    $loan_repayment_schedule->total_due = $loan_repayment_schedule->principal + $loan_repayment_schedule->interest + $loan_repayment_schedule->fees;
                         $loan_repayment_schedule->save();
                        }
                     }

@@ -496,8 +496,7 @@ class BusinessResource extends Resource
                         $suggestedLoanLimit = round($principal, -2);
                         return $suggestedLoanLimit;
                       })
-                      ->prefix('KES')
-                      ,
+                      ->prefix('KES'),
                     ])
                     ->columns(2),
 

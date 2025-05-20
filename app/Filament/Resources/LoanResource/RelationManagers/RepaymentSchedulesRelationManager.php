@@ -50,23 +50,24 @@ class RepaymentSchedulesRelationManager extends RelationManager
                             ->money(Currency::where('is_default', 1)->first()->symbol)
                             ->label('Total'),
                     ]),
-                Tables\Columns\TextColumn::make('penalties'),
-                Tables\Columns\TextColumn::make('fees')
-                    ->label('Fees')
-                    ->summarize([
-                        Tables\Columns\Summarizers\Sum::make()
-                            ->money(Currency::where('is_default', 1)->first()->symbol)
-                            ->label('Total'),
-                    ]),
+                // Tables\Columns\TextColumn::make('penalties'),
+                // Tables\Columns\TextColumn::make('fees')
+                //     ->label('Fees')
+                //     ->summarize([
+                //         Tables\Columns\Summarizers\Sum::make()
+                //             ->money(Currency::where('is_default', 1)->first()->symbol)
+                //             ->label('Total'),
+                //     ]),
+                Tables\Columns\TextColumn::make('total_installment')
+                ->label('Total Installment')
+                ->getStateUsing(fn (LoanRepaymentSchedule $record) => $record->getTotalInstallment())
+                ->money(Currency::where('is_default', 1)->first()->symbol),
+                
                 Tables\Columns\TextColumn::make('total_paid')
                        ->getStateUsing(fn (LoanRepaymentSchedule $record) => $record->getTotalPaid()),
                 Tables\Columns\TextColumn::make('total_due')
-                      ->label('Total Outstanding')
-                     ->summarize([
-                       Tables\Columns\Summarizers\Sum::make()
-                        ->money(Currency::where('is_default', 1)->first()->symbol)
-                        ->label('Total'),
-                ]),
+                      ->label('Total Balance')
+                      ->money(Currency::where('is_default', 1)->first()->symbol),
                 Tables\Columns\TextColumn::make('due_date'),
                 Tables\Columns\TextColumn::make('paid_by_date')
                        ->getStateUsing(fn (LoanRepaymentSchedule $record) => $record->getPaidByDate())

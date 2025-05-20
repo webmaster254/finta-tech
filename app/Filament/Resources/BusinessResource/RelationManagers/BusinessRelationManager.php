@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Placeholder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Resources\RelationManagers\RelationManager;
+use Joaopaulolndev\FilamentPdfViewer\Forms\Components\PdfViewerField;
 
 class BusinessRelationManager extends RelationManager
 {
@@ -78,7 +79,7 @@ class BusinessRelationManager extends RelationManager
                             ->required(),
                         Forms\Components\TextInput::make('gross_profit')
                             ->prefix('KES')
-                            ->label('Gross Profit')
+                            ->label('Weekly Gross Profit')
                             ->numeric()
                             ->default(0)
                             ->live(onBlur: true)
@@ -265,8 +266,8 @@ class BusinessRelationManager extends RelationManager
                     ->schema([
                         Forms\Components\TextInput::make('net_profit')
                         ->prefix('KES')
-                        ->live(onBlur: true)
-                        ->label('Net Profit')
+                        ->live()
+                        ->label('Weekly Net Profit')
                         ->placeholder(function (Forms\Get $get, Forms\Set $set, ?int $state) {
                             $get('gross_profit');
                             $hsTotal= $get('hs_total');
@@ -274,56 +275,65 @@ class BusinessRelationManager extends RelationManager
                             $profit = $get('gross_profit') - $hsTotal - $bsTotal;
                             $set('net_profit', $profit);
                             // Calculate loan affordability based on net profit
-                              if ($profit > 0) {
+                            if ($profit > 0) {
                                   // Weekly net profit
-                                  $weeklyNetProfit = $profit;
-                                  
+                                $weeklyNetProfit = $profit;
+                                
                                   // Calculate 75% of weekly net profit (affordable weekly installment)
                                   $affordableWeeklyInstallment = $weeklyNetProfit * 0.75;
-                                  
+                                
                                   // Calculate affordable daily installment
-                                  $affordableDailyInstallment = $affordableWeeklyInstallment / 7;
-                                  
+                                $affordableDailyInstallment = $affordableWeeklyInstallment / 7;
+                                
                                   // Calculate monthly payable (P+I)
                                   $monthlyPayable = $affordableDailyInstallment * 30;
-                                  
+                                
                                   // Calculate principal (P = monthly payable - 30% interest)
-                                  $interestAmount = $monthlyPayable * 0.30;
-                                  $principal = $monthlyPayable - $interestAmount;
-                                  
+                                  //$interestAmount = $monthlyPayable * 0.30;
+                                  $principal = $monthlyPayable * (100/130);
+                                
                                   // Round to nearest 100
-                                  $suggestedLoanLimit = round($principal, -2);
-                                  
+                                $suggestedLoanLimit = round($principal, -2);
+                                
                                   // Update affordability field
-                                  $set('affordability', $suggestedLoanLimit);
-                              } else {
+                                $set('affordability', $suggestedLoanLimit);
+                            } else {
                                   // If net profit is zero or negative, set affordability to zero
-                                  $set('affordability', 0);
-                              }
-                          return $profit;
-                      })
+                                $set('affordability', 0);
+                            }
+                        return $profit;
+                    })
                         ->numeric()
                         ->readOnly()
                         ->required(),
-                      Placeholder::make('affordability')
-                      ->prefix('KES')
-                      ->label('Affordability')
-                      ->numeric()
-                      ->disabled()
-                      ->required(),
+                    Forms\Components\TextInput::make('affordability')
+                     ->label('Monthly Affordability')
+                     ->prefix('KES')
+                     ->numeric()
+                     ->readOnly()
+                      ->placeholder(function (Forms\Get $get, Forms\Set $set, ?int $state) {
+                        $netProfit = $get('net_profit');
+                        $affordableWeeklyInstallment = $netProfit * 0.75;
+                        $affordableDailyInstallment = $affordableWeeklyInstallment / 7;
+                        $monthlyPayable = $affordableDailyInstallment * 30;
+                        $principal = $monthlyPayable * (100/130);
+                        $suggestedLoanLimit = round($principal, -2);
+                        return $suggestedLoanLimit;
+                      }),
                     ])
                     ->columns(2),
 
                 Fieldset::make('Mpesa Statement')
                     ->schema([
-                        Forms\Components\FileUpload::make('mpesa_statement')
+                        PdfViewerField::make('mpesa_statement')
                             ->label('Mpesa Statement')
-                            ->acceptedFileTypes(['application/pdf'])
-                            ->required(),
+                            ->minHeight('40svh'),
                         Forms\Components\TextInput::make('mpesa_code')
-                        ->acceptedFileTypes(['application/pdf'])
                             ->label('Mpesa Code')
                             ->required(),
+                        PdfViewerField::make('mpesa_summary')
+                        ->label('Mpesa Summary')
+                        ->required(),
                     ])
                     ->columns(2),
 
@@ -366,7 +376,7 @@ class BusinessRelationManager extends RelationManager
                     ->prefix('KES ')
                     ->getStateUsing(function (BusinessOverview $record) {
                          $p= $record->net_profit * 0.75;
-                         $affordability = ($p/7)*30;
+                        $affordability = ($p/7)*30;
                         return $affordability;
                     })
                     ->numeric(),
@@ -374,18 +384,18 @@ class BusinessRelationManager extends RelationManager
                     ->label('Loan Limit')
                     ->prefix('KES ')
                     ->numeric(),
-                Tables\Columns\TextColumn::make('mpesa_code')
-                    ->label('Mpesa Code'),
-                Tables\Columns\TextColumn::make('mpesa_statement')
-                    ->label('Mpesa Statement')
-                    ->url(function (BusinessOverview $record) {
-                        return $record->mpesa_statement;
-                    }),
-                Tables\Columns\TextColumn::make('mpesa_summary')
-                    ->label('Mpesa Summary')
-                    ->url(function (BusinessOverview $record) {
-                        return $record->mpesa_summary;
-                    }),
+                // Tables\Columns\TextColumn::make('mpesa_code')
+                //     ->label('Mpesa Code'),
+                // Tables\Columns\TextColumn::make('mpesa_statement')
+                //     ->label('Mpesa Statement')
+                //     ->url(function (BusinessOverview $record) {
+                //         return $record->mpesa_statement;
+                //     }),
+                // Tables\Columns\TextColumn::make('mpesa_summary')
+                //     ->label('Mpesa Summary')
+                //     ->url(function (BusinessOverview $record) {
+                //         return $record->mpesa_summary;
+                //     }),
             ])
             ->filters([
                 //
@@ -399,6 +409,7 @@ class BusinessRelationManager extends RelationManager
                 // ->modalHeading('Add Business Overview'),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 // Tables\Actions\EditAction::make(),
                 // Tables\Actions\DeleteAction::make(),
             ])
@@ -428,7 +439,7 @@ class BusinessRelationManager extends RelationManager
     {
         $set('cost_of_sales',$get('current_stock') + $get('average_weekly_purchase') - $get('average_weekly_stock_balance')  );
     }
-   private static function updateNetProfit(Forms\Get $get, Forms\Set $set):void
+    private static function updateNetProfit(Forms\Get $get, Forms\Set $set):void
     {
         // Calculate net profit
         $netProfit = $get('gross_profit') - $get('bs_total') - $get('hs_total');

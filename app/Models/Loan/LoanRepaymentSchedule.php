@@ -80,6 +80,11 @@ class LoanRepaymentSchedule extends Model
         $total = $this->principal_repaid_derived + $this->interest_repaid_derived + $this->fees_repaid_derived + $this->penalties_repaid_derived;
         return $total;
     }
+    public function getTotalInstallment()
+    {
+        $total = $this->principal + $this->interest ;
+        return $total;
+    }
     // public function getAmountRepaid()
     // {
     //     $total = $this->principal_repaid_derived + $this->interest_repaid_derived + $this->fees_repaid_derived + $this->penalties_repaid_derived;

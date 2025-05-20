@@ -116,6 +116,8 @@ class UpdateLoanSchedule
         $next_payment_date = $loan->first_payment_date;
         $total_principal = 0;
         $total_interest = 0;
+        $total_outstanding = 0;
+        $totalInstallmentBalance = 0;
 
        
         
@@ -198,7 +200,17 @@ class UpdateLoanSchedule
             }
             $total_principal = $total_principal + $loan_repayment_schedule->principal;
             $total_interest = $total_interest + $loan_repayment_schedule->interest;
-            $loan_repayment_schedule->total_due = $loan_repayment_schedule->principal + $loan_repayment_schedule->interest;
+            
+            // Calculate total_due based on installment number
+            if ($i == 1) {
+                // For first installment, total_due is the full principal + interest
+                $loan_repayment_schedule->total_due = $loan->approved_amount + $loan->interest_disbursed_derived;
+                $total_outstanding = $loan->approved_amount + $loan->interest_disbursed_derived- ($loan_repayment_schedule->principal + $loan_repayment_schedule->interest);
+            } else {
+                // For subsequent installments, use previous total_outstanding
+                $loan_repayment_schedule->total_due = $total_outstanding;
+                $total_outstanding = $total_outstanding - ($loan_repayment_schedule->principal + $loan_repayment_schedule->interest);
+            }
             $loan_repayment_schedule->save();
         }
 
@@ -471,6 +483,7 @@ class UpdateLoanSchedule
                         } else {
                             $loan_repayment_schedule->fees = $loan_repayment_schedule->fees + $key->calculated_amount;
                         }
+                        //get total due from total principal and interest and fees from total_principal and total_interest and fees of previous schedules
                         $loan_repayment_schedule->total_due = $loan_repayment_schedule->principal + $loan_repayment_schedule->interest + $loan_repayment_schedule->fees;
                         $loan_repayment_schedule->save();
                        }

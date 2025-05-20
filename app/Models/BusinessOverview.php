@@ -11,14 +11,7 @@ class BusinessOverview extends Model
 {
     use HasFactory;
     
-    protected static function booted(): void
-    {
-        static::saved(function ($businessOverview) {
-            // Calculate loan affordability and update client's suggested loan limit
-            $businessOverview->calculateLoanAffordability();
-        });
-    }
-
+   
     protected $fillable = [
         'business_id',
         'current_stock',
@@ -53,10 +46,22 @@ class BusinessOverview extends Model
         'mpesa_summary',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function ($businessOverview) {
+            $businessOverview->business->client->update([
+                'suggested_loan_limit' => $businessOverview->affordability
+            ]);
+        });
+    }
+
+
     public function business()
     {
         return $this->belongsTo(Business::class, 'business_id', 'id');
     }
+
+    // This method is no longer needed as we're using booted() instead
     
     /**
      * Calculate loan affordability based on business net profit and update client's suggested loan limit
@@ -68,38 +73,38 @@ class BusinessOverview extends Model
      * 4. Calculate principal (monthly payable - 30% interest)
      * 5. Update client's suggested loan limit with the calculated principal
      */
-    public function calculateLoanAffordability(): void
-    {
-        // Check if net_profit is available
-        if (!$this->net_profit) {
-            return;
-        }
+    // public function calculateLoanAffordability(): void
+    // {
+    //     // Check if net_profit is available
+    //     if (!$this->net_profit) {
+    //         return;
+    //     }
         
-        // Weekly net profit
-        $weeklyNetProfit = $this->net_profit;
+    //     // Weekly net profit
+    //     $weeklyNetProfit = $this->net_profit;
+            
+    //     // Calculate 75% of weekly net profit (affordable weekly installment)
+    //     $affordableWeeklyInstallment = $weeklyNetProfit * 0.75;
+            
+    //     // Calculate affordable daily installment
+    //     $affordableDailyInstallment = $affordableWeeklyInstallment / 7;
+            
+    //     // Calculate monthly payable (P+I)
+    //     $monthlyPayable = $affordableDailyInstallment * 30;
+            
+    //     // Calculate principal (P = monthly payable - 30% interest)
+    //     $interestAmount = $monthlyPayable * 0.30;
+    //     $principal = $monthlyPayable - $interestAmount;
+            
+    //     // Round to nearest 100
+    //     $suggestedLoanLimit = round($principal, -2);
         
-        // Calculate 75% of weekly net profit (affordable weekly installment)
-        $affordableWeeklyInstallment = $weeklyNetProfit * 0.75;
-        
-        // Calculate affordable daily installment
-        $affordableDailyInstallment = $affordableWeeklyInstallment / 7;
-        
-        // Calculate monthly payable (P+I)
-        $monthlyPayable = $affordableDailyInstallment * 30;
-        
-        // Calculate principal (P = monthly payable - 30% interest)
-        $interestAmount = $monthlyPayable * 0.30;
-        $principal = $monthlyPayable - $interestAmount;
-        
-        // Round to nearest 100
-        $suggestedLoanLimit = round($principal, -2);
-        
-        // Update the client's suggested loan limit
-        $business = $this->business;
-        if ($business && $business->client) {
-            $business->client->update([
-                'suggested_loan_limit' => $suggestedLoanLimit
-            ]);
-        }
-    }
+    //     // Update the client's suggested loan limit
+    //     $business = $this->business;
+    //     if ($business && $business->client) {
+    //         $business->client->update([
+    //             'suggested_loan_limit' => $suggestedLoanLimit
+    //         ]);
+    //     }
+    // }
 }
